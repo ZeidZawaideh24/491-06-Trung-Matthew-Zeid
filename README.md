@@ -1,4 +1,2 @@
-# 491 Project 
-Trung Tran
-Matthew Hang 
-Zeid Zawaideh
+## 491 Project 
+# Names: Trung Tran, Matthew Hang, Zeid Zawaideh
