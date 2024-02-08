@@ -1,0 +1,6 @@
+[submodule "server/code/lib/FlareSolverr"]
+	path = server/code/lib/FlareSolverr
+	url = https://github.com/FlareSolverr/FlareSolverr
+[submodule "server/code/lib/twikit"]
+	path = server/code/lib/twikit
+	url = https://github.com/d60/twikit
