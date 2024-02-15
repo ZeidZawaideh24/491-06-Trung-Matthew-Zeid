@@ -1,10 +1,5 @@
-__import__("sys").path.insert(0, __import__("pathlib").Path(__file__).parent.parent.parent.absolute())
+__import__("sys").path.insert(0, str(__import__("pathlib").Path(__file__).parent.parent.parent.parent.parent.absolute()))
 
-print(__import__("sys").path)
+import memba.server.code.base.base as memba_base
 
-# 3rd party
-import aiohttp.web
-
-from code.base.base import Server
-
-print(Server)
+print(dir(memba_base))

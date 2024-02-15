@@ -1,3 +1,5 @@
+import aiohttp.web
+
 class Server:
 	# async def websocket(self, request):
 	# 	ws = aiohttp.web.WebSocketResponse()
@@ -13,7 +15,7 @@ class Server:
 	# 	return ws
 
 	comm = aiohttp.web.WebSocketResponse()
-	site = aiohttp.web.Application()
+	core = aiohttp.web.Application()
 
 	async def __init__(self):
 		pass
