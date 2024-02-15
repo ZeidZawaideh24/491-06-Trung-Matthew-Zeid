@@ -1,10 +1,3 @@
-import pathlib
-
-SCRIPT_PATH = pathlib.Path(__file__).parent.parent.absolute()
-
-# 3rd party
-import aiohttp
-
 class Server:
 	# async def websocket(self, request):
 	# 	ws = aiohttp.web.WebSocketResponse()
@@ -24,5 +17,3 @@ class Server:
 
 	async def __init__(self):
 		pass
-
-print(SCRIPT_PATH)
