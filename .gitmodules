@@ -1,6 +1,6 @@
-[submodule "memba/server/code/lib/FlareSolverr"]
-	path = memba/server/code/lib/FlareSolverr
+[submodule "memba/backend/lib/FlareSolverr"]
+	path = memba/backend/lib/FlareSolverr
 	url = https://github.com/FlareSolverr/FlareSolverr
-[submodule "memba/server/code/lib/twikit"]
-	path = memba/server/code/lib/twikit
+[submodule "memba/backend/lib/twikit"]
+	path = memba/backend/lib/twikit
 	url = https://github.com/d60/twikit

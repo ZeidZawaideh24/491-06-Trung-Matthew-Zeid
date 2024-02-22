@@ -1,12 +1,4 @@
-(lambda: exec("""
-import sys
-import pathlib
-temp_path = pathlib.Path(__file__).parent.parent
-sys.path.insert(0, str(temp_path.parent.parent.parent.absolute()))
-sys.path.insert(0, str(temp_path / "lib"))
-"""))()
-
-import memba.server.code.base.base as memba_base
+from . import server as memba_server
 # from twikit import twikit
 
 import asyncio
@@ -14,7 +6,7 @@ import asyncio
 
 memba_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(memba_loop)
-memba_server = memba_base.Server()
+memba_server = memba_server.Server()
 
 print("[MSG] Starting server")
 memba_loop.run_until_complete(memba_server.start())
