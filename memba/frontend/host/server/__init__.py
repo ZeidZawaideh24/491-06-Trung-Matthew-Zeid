@@ -3,7 +3,7 @@ import aiohttp.web
 import asyncio
 import uuid
 
-MEMBA_VERSION = "0.0.1"
+from memba.main import MEMBA_VERSION
 
 class State:
 	socket: aiohttp.web.WebSocketResponse | None = None
