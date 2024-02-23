@@ -1,6 +1,6 @@
-fake_useragent
+# fake_useragent
 # playwright
 # beautifulsoup4
-extruct
-cloudscraper
+# extruct
+# cloudscraper
 databases
