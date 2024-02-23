@@ -6,7 +6,9 @@ sys.path.insert(0, str(script_path / "backend" / "lib"))
 sys.path.insert(0, str(script_path.parent.absolute()))
 """))()
 
-MEMBA_VERSION = "0.0.1"
+# [TODO] Maybe support two paradigm: client/server and cmd
+# client/server: with scheduler to run task
+# cmd: use system task scheduler
 
 # Temporary
 from memba.frontend import host

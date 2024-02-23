@@ -1,0 +1,10 @@
+import memba.backend.plugin.base.run as memba_plugin_run
+from . import data as memba_data
+from . import config as memba_config
+
+async def start():
+	await memba_plugin_run.run_all()
+	pass
+
+async def close():
+	pass

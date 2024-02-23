@@ -3,7 +3,7 @@ import aiohttp.web
 import asyncio
 import uuid
 
-from memba.main import MEMBA_VERSION
+import memba.backend.base.misc as memba_misc
 
 class State:
 	socket: aiohttp.web.WebSocketResponse | None = None
@@ -60,30 +60,74 @@ class Server:
 			await self.state[client_id].socket.send_json({
 				"command": "client_id_init",
 				"format": "str",
-				"version": MEMBA_VERSION,
+				"version": memba_misc.MEMBA_VERSION,
 			})
 			await self.state[client_id].socket.send_str(client_id)
 
-		header_log = "[CLIENT_ID {}] [{}]".format(client_id, api_path)
+		log_tag = {
+			"client_id": client_id,
+			"api_path": api_path,
+		}
 
 		try:
 			async for msg in curr_state.socket:
 				match msg.type:
 					case aiohttp.WSMsgType.TEXT:
-						print("[MSG] {} [DATA TEXT] {}".format(header_log, msg.data))
+						memba_misc.log(
+							"MSG",
+							msg=msg.data,
+							**{
+								**log_tag,
+								"msg_type": "text",
+							}
+						)
 					case aiohttp.WSMsgType.BINARY:
-						print("[MSG] {} [DATA BINARY] {}".format(header_log, msg.data))
+						memba_misc.log(
+							"MSG",
+							msg=msg.data,
+							**{
+								**log_tag,
+								"msg_type": "binary",
+							}
+						)
 					case aiohttp.WSMsgType.CLOSE:
-						print("[MSG] {} [DATA CLOSE] Connection closed.".format(header_log))
+						memba_misc.log(
+							"MSG",
+							msg="Connection closed.",
+							**{
+								**log_tag,
+								"msg_type": "close",
+							}
+						)
 					case aiohttp.WSMsgType.ERROR:
-						print("[ERROR] {} [INFO {}] Connection closed.".format(header_log, curr_state.socket.exception()))
+						memba_misc.log(
+							"ERROR",
+							msg="Connection closed ({}).".format(curr_state.socket.exception()),
+							**log_tag
+						)
 					case _:
-						print("[ERROR] {} [INFO {}] Unknown message type.".format(header_log, msg.type))
+						memba_misc.log(
+							"ERROR",
+							msg="Unknown message type.",
+							**log_tag
+						)
 		except (aiohttp.ClientError, aiohttp.ClientPayloadError, ConnectionResetError) as err:
-			print("[ERROR] {} [INFO {}] Sending failed.".format(header_log, err))
+			memba_misc.log(
+				"ERROR",
+				msg="Sending failed ({}).".format(err),
+				**log_tag
+			)
 		except Exception as err:
-			print("[ERROR] {} [INFO {}] Unknown error.".format(header_log, err))
+			memba_misc.log(
+				"ERROR",
+				msg="Unknown error ({}).".format(err),
+				**log_tag
+			)
 		finally:
-			print("[MSG] {} Closing connection.".format(header_log))
+			memba_misc.log(
+				"MSG",
+				msg="Closing connection.",
+				**log_tag
+			)
 		
 		return curr_state.socket

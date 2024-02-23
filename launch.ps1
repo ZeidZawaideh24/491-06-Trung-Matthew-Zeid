@@ -10,4 +10,4 @@
 git submodule update --init --recursive
 
 # Run the current python folder using ./server/code/base/main.py as beginning
-python .\memba\__init__py
+python .\memba\main.py
