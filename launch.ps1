@@ -14,3 +14,18 @@ python .\memba\main.py
 
 # Curent roadblockers:
 # data.db schema
+
+# Test client side code
+# var socket = new WebSocket("ws://localhost:30303/dev/ws");
+
+# socket.addEventListener("open", (event) => {
+#   socket.send("Hello Server!");
+# });
+
+# // Listen for messages
+# socket.addEventListener("message", (event) => {
+#   console.log("Message from server ", event.data);
+# });
+# socket.addEventListener("close", (event) => {
+#   console.log("Close server ", event.data);
+# });

@@ -2,8 +2,11 @@ import aiohttp
 import aiohttp.web
 import asyncio
 import uuid
+import logging
+import functools
 
 import memba.backend.base.misc as memba_misc
+import memba.backend.plugin.base.run as memba_plugin_run
 
 class State:
 	socket: aiohttp.web.WebSocketResponse | None = None
@@ -29,6 +32,7 @@ class Server:
 		await self.run.setup()
 		self.site = aiohttp.web.TCPSite(self.run, "localhost", 30303)
 		await self.site.start()
+		await memba_plugin_run.run()
 
 	async def close(self):
 		asyncio.gather(*[
@@ -74,8 +78,9 @@ class Server:
 				match msg.type:
 					case aiohttp.WSMsgType.TEXT:
 						memba_misc.log(
-							"MSG",
+							"SERVER WS",
 							msg=msg.data,
+							level=logging.DEBUG,
 							**{
 								**log_tag,
 								"msg_type": "text",
@@ -83,8 +88,9 @@ class Server:
 						)
 					case aiohttp.WSMsgType.BINARY:
 						memba_misc.log(
-							"MSG",
+							"SERVER WS",
 							msg=msg.data,
+							level=logging.DEBUG,
 							**{
 								**log_tag,
 								"msg_type": "binary",
@@ -92,8 +98,9 @@ class Server:
 						)
 					case aiohttp.WSMsgType.CLOSE:
 						memba_misc.log(
-							"MSG",
+							"SERVER WS",
 							msg="Connection closed.",
+							level=logging.DEBUG,
 							**{
 								**log_tag,
 								"msg_type": "close",
@@ -101,32 +108,37 @@ class Server:
 						)
 					case aiohttp.WSMsgType.ERROR:
 						memba_misc.log(
-							"ERROR",
+							"SERVER WS",
 							msg="Connection closed ({}).".format(curr_state.socket.exception()),
+							level=logging.ERROR,
 							**log_tag
 						)
 					case _:
 						memba_misc.log(
-							"ERROR",
+							"SERVER WS",
 							msg="Unknown message type.",
+							level=logging.ERROR,
 							**log_tag
 						)
 		except (aiohttp.ClientError, aiohttp.ClientPayloadError, ConnectionResetError) as err:
 			memba_misc.log(
-				"ERROR",
+				"SERVER WS",
 				msg="Sending failed ({}).".format(err),
+				level=logging.ERROR,
 				**log_tag
 			)
 		except Exception as err:
 			memba_misc.log(
-				"ERROR",
+				"SERVER WS",
 				msg="Unknown error ({}).".format(err),
+				level=logging.ERROR,
 				**log_tag
 			)
 		finally:
 			memba_misc.log(
-				"MSG",
+				"SERVER WS",
 				msg="Closing connection.",
+				level=logging.DEBUG,
 				**log_tag
 			)
 		

@@ -4,3 +4,6 @@
 # extruct
 # cloudscraper
 databases
+aiosqlite
+sqlalchemy
+sqlite3
