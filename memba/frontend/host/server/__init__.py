@@ -6,7 +6,7 @@ import logging
 import functools
 
 import memba.backend.base.misc as memba_misc
-import memba.backend.plugin.base.run as memba_plugin_run
+import memba.backend.plugin.base as memba_plugin_run
 import memba.backend.base as memba_base
 
 class State:
@@ -36,6 +36,7 @@ class Server:
 		await memba_base.start()
 
 	async def close(self):
+		await memba_base.close()
 		asyncio.gather(*[
 			self.state[client_id].socket.close() \
 				for client_id in self.state \

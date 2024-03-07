@@ -14,7 +14,7 @@ class SERVE_FLAG(enum.Enum):
 	EXPORT = 2
 	BOTH = 3
 
-async def run():
+async def start():
 	# [TODO] Loop through directory of plugins through config, not hardcoded
 
 	memba_misc.log(
@@ -80,3 +80,6 @@ async def run():
 		msg="Plugin loader finished.",
 		level=logging.INFO
 	)
+
+async def close():
+	pass

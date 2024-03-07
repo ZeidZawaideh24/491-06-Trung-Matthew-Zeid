@@ -89,5 +89,11 @@ async def start():
 				await conn.raw_connection.executescript(f.read())
 
 async def close():
+	global DATA_DB
+	memba_misc.log(
+		"DATA",
+		msg="Closing database.",
+		level=memba_misc.logging.INFO
+	)
 	await DATA_DB.disconnect()
 	DATA_DB = None
