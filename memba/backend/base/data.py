@@ -84,6 +84,9 @@ async def start():
 			level=memba_misc.logging.INFO
 		)
 
+		# Create directory if it doesn't exist
+		pathlib.Path("data").mkdir(parents=True, exist_ok=True)
+
 		async with DATA_DB.connection() as conn:
 			with open("memba/backend/data/main.sql", "r") as f:
 				await conn.raw_connection.executescript(f.read())
