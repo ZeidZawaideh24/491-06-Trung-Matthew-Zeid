@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 git submodule update --init --recursive
 
 if command -v python3 &>/dev/null; then
