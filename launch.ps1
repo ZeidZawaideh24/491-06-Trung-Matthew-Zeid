@@ -29,3 +29,7 @@ python .\memba\main.py
 # socket.addEventListener("close", (event) => {
 #   console.log("Close server ", event.data);
 # });
+
+# https://github.com/HackerNews/API
+
+# &"C:\Program Files (Sole)\ComfyUI\python_embeded\python.exe" .\memba\main.py

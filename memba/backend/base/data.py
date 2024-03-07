@@ -5,6 +5,7 @@ import sqlalchemy
 import sqlalchemy.dialects.sqlite
 import databases
 import sqlite3
+import pathlib
 
 class ForeignKeyConnection(sqlite3.Connection):
 	def __init__(self, *args, **kwargs):
@@ -15,33 +16,78 @@ def make_table(name, *cols):
 	meta = sqlalchemy.MetaData()
 	return sqlalchemy.Table(name, meta, *cols)
 
-# [TODO] DB path is temporary
-DATA_DB = databases.Database("sqlite+aiosqlite:///data.db", factory=ForeignKeyConnection)
+DATA_DB = None
 
-# Reference old code
+memba_account_table = make_table(
+	"memba_account",
+	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
+	sqlalchemy.Column("user", sqlalchemy.Text, nullable=False, unique=True),
+	sqlalchemy.Column("pwd", sqlalchemy.Text, nullable=False),
+	sqlalchemy.Column("email", sqlalchemy.Text, nullable=False, unique=True),
+	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now())
+)
 
-# import sqlalchemy as s
-# import sqlalchemy.dialects.sqlite as sq
-# import databases as d
-# import sqlite3 as sl
+site_account_table = make_table(
+	"site_account",
+	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
+	sqlalchemy.Column("user_id", sqlalchemy.BLOB, nullable=False),
+	sqlalchemy.Column("site_id", sqlalchemy.BLOB, nullable=False),
+	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
+	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+	sqlalchemy.Column("updated", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+	sqlalchemy.PrimaryKeyConstraint("user_id", "site_id"),
+	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"])
+)
 
-# wordle_game_table = base.make_table(
-# 	"wordle_game",
-# 	base.s.Column("game_id", base.s.String(length=36), primary_key=True, nullable=False),
-# 	base.s.Column("username", base.s.Text, primary_key=True, nullable=False),
-# 	base.s.Column("word", base.s.Text, nullable=False) # The answer for the word
-# 	# s.Column("count", s.BigInteger, nullable=False) # Total guesses so far (Probably not needed)
-# )
+site_log_table = make_table(
+	"site_log",
+	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
+	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
+	sqlalchemy.Column("user_id", sqlalchemy.BLOB, nullable=False),
+	sqlalchemy.Column("site_id", sqlalchemy.BLOB, nullable=False),
+	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+	sqlalchemy.Column("updated", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
+	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
+	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
+)
 
-# wordle_guess_table = base.make_table(
-# 	"wordle_guess",
-# 	base.s.Column("game_id", base.s.String(length=36), base.s.ForeignKey("wordle_game.game_id", ondelete="CASCADE"), primary_key=True, nullable=False),
-# 	base.s.Column("word", base.s.Text, nullable=False), # The guess for the word
-# 	base.s.Column("order", base.s.BigInteger, primary_key=True, nullable=False) # Order of the guesses (higher = later)
-# )
+site_link_table = make_table(
+	"site_link",
+	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
+	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
+	sqlalchemy.Column("user_id", sqlalchemy.BLOB, nullable=False),
+	sqlalchemy.Column("site_id", sqlalchemy.BLOB, nullable=False),
+	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
+	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
+	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
+)
 
-# wordle_word_table = base.make_table(
-# 	"wordle_word",
-# 	base.s.Column("valid", base.s.Integer, nullable=False),
-# 	base.s.Column("word", base.s.Text, nullable=False)
-# )
+async def start():
+	global DATA_DB
+	if DATA_DB is not None:
+		return
+	
+	DATA_DB = databases.Database("sqlite+aiosqlite:///data/memba.db", factory=ForeignKeyConnection)
+	await DATA_DB.connect()
+	if pathlib.Path("data/memba.db").exists():
+		memba_misc.log(
+			"DATA",
+			msg="Connecting to existing database.",
+			level=memba_misc.logging.INFO
+		)
+	else:
+		memba_misc.log(
+			"DATA",
+			msg="Creating new database.",
+			level=memba_misc.logging.INFO
+		)
+
+		async with DATA_DB.connection() as conn:
+			with open("memba/backend/data/main.sql", "r") as f:
+				await conn.raw_connection.executescript(f.read())
+
+async def close():
+	await DATA_DB.disconnect()
+	DATA_DB = None

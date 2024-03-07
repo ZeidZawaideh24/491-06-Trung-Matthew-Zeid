@@ -7,6 +7,7 @@ import functools
 
 import memba.backend.base.misc as memba_misc
 import memba.backend.plugin.base.run as memba_plugin_run
+import memba.backend.base as memba_base
 
 class State:
 	socket: aiohttp.web.WebSocketResponse | None = None
@@ -32,7 +33,7 @@ class Server:
 		await self.run.setup()
 		self.site = aiohttp.web.TCPSite(self.run, "localhost", 30303)
 		await self.site.start()
-		await memba_plugin_run.run()
+		await memba_base.start()
 
 	async def close(self):
 		asyncio.gather(*[
