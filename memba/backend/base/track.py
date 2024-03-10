@@ -6,7 +6,6 @@ import apscheduler.datastores.sqlalchemy
 
 import memba.backend.base.config as memba_config
 import memba.backend.base.misc as memba_misc
-import memba.backend.base.data as memba_data
 
 TRACK_ENGINE = None
 TRACK_DB = None

@@ -25,20 +25,3 @@ except (KeyboardInterrupt, SystemExit):
 	log_func(msg="Server closed.")
 finally:
 	memba_loop.close()
-
-# memba_server = memba_server.Server()
-
-# log_func = functools.partial(memba_misc.log, "SERVER", **{}, level=logging.INFO)
-
-# log_func(msg="Starting server.")
-# asyncio.run(memba_server.start())
-# log_func(msg="Server started.")
-
-# try:
-# 	asyncio.run(memba_server.loop())
-# except KeyboardInterrupt:
-# 	pass
-# finally:
-# 	log_func(msg="Closing server.")
-# 	asyncio.run(memba_server.close())
-# 	log_func(msg="Server closed.")
