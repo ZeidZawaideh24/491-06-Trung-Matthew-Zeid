@@ -46,10 +46,12 @@ class Server:
 					if self.state[client_id].socket is not None and \
 						not self.state[client_id].socket.closed
 		])
-		await self.site.stop()
+		if self.site._server is not None:
+			await self.site.stop()
 		await self.app.shutdown()
 		await self.app.cleanup()
-		await self.run.cleanup()
+		if self.run is not None:
+			await self.run.cleanup()
 
 	"""
 	Handles the websocket connection.
