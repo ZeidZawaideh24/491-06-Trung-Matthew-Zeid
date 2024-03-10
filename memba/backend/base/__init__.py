@@ -33,8 +33,6 @@ async def core_loop():
 
 async def loop():
 	await asyncio.gather(memba_track.TRACK_TASK, core_loop())
-	# Run task
-	# await memba_track.TRACK_TASK
 
 async def close():
 	await memba_track.close()
