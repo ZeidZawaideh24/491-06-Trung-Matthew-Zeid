@@ -6,7 +6,7 @@ import logging
 import functools
 
 import memba.backend.base.misc as memba_misc
-import memba.backend.plugin.base as memba_plugin_run
+import memba.backend.base.track as memba_track
 import memba.backend.base as memba_base
 
 class State:
@@ -34,6 +34,9 @@ class Server:
 		self.site = aiohttp.web.TCPSite(self.run, "localhost", 30303)
 		await self.site.start()
 		await memba_base.start()
+
+	async def loop(self):
+		await memba_base.loop()
 
 	async def close(self):
 		await memba_base.close()

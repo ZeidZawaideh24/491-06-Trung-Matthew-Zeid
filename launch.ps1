@@ -12,6 +12,8 @@ git submodule update --init --recursive
 # Run the current python folder using ./server/code/base/main.py as beginning
 python .\memba\main.py
 
+# sqlalchemy prev ver: 1.4.51
+
 # Curent roadblockers:
 # data.db schema
 

@@ -16,7 +16,7 @@ def make_table(name, *cols):
 	meta = sqlalchemy.MetaData()
 	return sqlalchemy.Table(name, meta, *cols)
 
-DATA_DB = None
+DATA_DB: databases.Database = None
 
 memba_account_table = make_table(
 	"memba_account",
@@ -69,9 +69,9 @@ async def start():
 	if DATA_DB is not None:
 		return
 	
-	DATA_DB = databases.Database("sqlite+aiosqlite:///data/memba.db", factory=ForeignKeyConnection)
+	DATA_DB = databases.Database(f"sqlite+aiosqlite:///{memba_config.config['data_path']}", factory=ForeignKeyConnection)
 	await DATA_DB.connect()
-	if pathlib.Path("data/memba.db").exists():
+	if pathlib.Path(memba_config.config["data_path"]).exists():
 		memba_misc.log(
 			"DATA",
 			msg="Connecting to existing database.",
@@ -84,8 +84,8 @@ async def start():
 			level=memba_misc.logging.INFO
 		)
 
-		# Create directory if it doesn't exist
-		pathlib.Path("data").mkdir(parents=True, exist_ok=True)
+		# Recursively create directory if it doesn't exist
+		pathlib.Path(memba_config.config["data_path"]).parent.mkdir(parents=True, exist_ok=True)
 
 		async with DATA_DB.connection() as conn:
 			with open("memba/backend/data/main.sql", "r") as f:

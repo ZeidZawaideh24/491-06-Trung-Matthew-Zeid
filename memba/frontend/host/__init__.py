@@ -17,13 +17,8 @@ log_func(msg="Starting server.")
 memba_loop.run_until_complete(memba_server.start())
 log_func(msg="Server started.")
 
-async def loop():
-	while True:
-		log_func(msg="loop")
-		await asyncio.sleep(1)
-
 try:
-	memba_loop.run_until_complete(loop())
+	memba_loop.run_until_complete(memba_server.loop())
 except KeyboardInterrupt:
 	log_func(msg="Closing server.")
 	memba_loop.run_until_complete(memba_server.close())
