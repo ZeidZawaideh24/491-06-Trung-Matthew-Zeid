@@ -11,4 +11,5 @@ else
   exit 1
 fi
 
+$PYTHON_LOCAL_PATH -m pip install -r ./requirements.txt
 $PYTHON_LOCAL_PATH ./memba/main.py

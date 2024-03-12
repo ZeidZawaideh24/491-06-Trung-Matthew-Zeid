@@ -9,6 +9,8 @@
 # Fetch submodule
 git submodule update --init --recursive
 
+python -m pip install -r .\requirements.txt
+
 # Run the current python folder using ./server/code/base/main.py as beginning
 python .\memba\main.py
 
