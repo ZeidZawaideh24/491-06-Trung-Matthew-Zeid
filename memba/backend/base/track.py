@@ -3,6 +3,7 @@ import pathlib
 
 import apscheduler # https://github.com/agronholm/apscheduler/issues/465
 import apscheduler.datastores.sqlalchemy
+import sqlalchemy.ext.asyncio
 
 import memba.backend.base.config as memba_config
 import memba.backend.base.misc as memba_misc
@@ -43,7 +44,7 @@ async def start():
 			level=memba_misc.logging.INFO
 		)
 	
-	TRACK_ENGINE = apscheduler.datastores.sqlalchemy.create_async_engine(f"sqlite+aiosqlite:///{memba_config.config['schedule_path']}")
+	TRACK_ENGINE = sqlalchemy.ext.asyncio.create_async_engine(f"sqlite+aiosqlite:///{memba_config.config['schedule_path']}")
 	pathlib.Path(memba_config.config["schedule_path"]).parent.mkdir(parents=True, exist_ok=True)
 	TRACK_DB = apscheduler.datastores.sqlalchemy.SQLAlchemyDataStore(engine=TRACK_ENGINE)
 	TRACK_TASK = schedule()
