@@ -8,10 +8,10 @@ import sqlalchemy.ext.asyncio
 import memba.backend.base.config as memba_config
 import memba.backend.base.misc as memba_misc
 
-TRACK_ENGINE = None
-TRACK_DB = None
+TRACK_ENGINE: sqlalchemy.ext.asyncio.AsyncEngine = None
+TRACK_DB: apscheduler.datastores.sqlalchemy.SQLAlchemyDataStore = None
 TRACK_TASK = None
-TRACK_SCHEDULE = None
+TRACK_SCHEDULE: apscheduler.AsyncScheduler = None
 
 async def schedule():
 	global TRACK_DB
@@ -50,7 +50,6 @@ async def start():
 	TRACK_TASK = schedule()
 
 async def close():
-	global TRACK_TASK
 	global TRACK_SCHEDULE
 	memba_misc.log(
 		"SCHEDULE",

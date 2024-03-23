@@ -37,4 +37,4 @@ python .\memba\main.py
 # https://github.com/HackerNews/API
 
 # Personal stuff
-# &"C:\Program Files (Sole)\...\python_embeded\python.exe" .\memba\main.py
+# &"C:\Program Files (Sole)\ComfyUI\python_embeded\python.exe" .\memba\main.py
