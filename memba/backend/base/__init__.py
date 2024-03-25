@@ -3,7 +3,6 @@ from . import data as memba_data
 from . import track as memba_track
 from . import misc as memba_misc
 
-import inspect
 import asyncio
 
 async def start():
