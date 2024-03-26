@@ -18,20 +18,22 @@ class SERVE_FLAG(enum.Enum):
 	EXPORT = 2
 	BOTH = 3
 
-async def trigger(evt, flag=False, *args, **kwargs):
+async def trigger(evt, flag: bool | str = False, *args, **kwargs):
 	global PLUGIN_DB
 	global PLUGIN_NS
+	curr_iter = [flag] if isinstance(flag, str) else vars(PLUGIN_DB) if isinstance(flag, bool) else []
 	if flag:
-		for curr_plugin in vars(PLUGIN_DB):
-			if isinstance(getattr(PLUGIN_DB, curr_plugin), PLUGIN_NS["V1"]):
+		# Should be str or bool
+		for curr_plugin in curr_iter:
+			if hasattr(PLUGIN_DB, curr_plugin) and isinstance(getattr(PLUGIN_DB, curr_plugin), PLUGIN_NS["V1"]):
 				if evt in getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt:
 					await getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs)
 	else:
 		await asyncio.gather(
 			*[
 				getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs)
-				for curr_plugin in vars(PLUGIN_DB)
-					if isinstance(getattr(PLUGIN_DB, curr_plugin), PLUGIN_NS["V1"]) and
+				for curr_plugin in curr_iter
+					if hasattr(PLUGIN_DB, curr_plugin) and isinstance(getattr(PLUGIN_DB, curr_plugin), PLUGIN_NS["V1"]) and
 						evt in getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt
 			]
 		)
