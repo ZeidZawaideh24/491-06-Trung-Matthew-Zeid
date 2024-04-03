@@ -23,6 +23,7 @@ for evt_class in vars(apscheduler):
 		TRACK_EVT.append(getattr(apscheduler, evt_class))
 
 async def handle(event: apscheduler.Event):
+	# [TODO] Event reroute to all plugins
 	print(f"Received {event.__class__.__name__}")
 
 async def track():
