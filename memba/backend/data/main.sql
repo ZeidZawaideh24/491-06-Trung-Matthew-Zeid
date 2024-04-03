@@ -17,23 +17,6 @@ CREATE TABLE IF NOT EXISTS "memba_account_key" (
 	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id")
 );
 
--- CREATE TABLE IF NOT EXISTS "memba_schedule" (
--- 	"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
--- 	"memba_id" INTEGER NOT NULL,
--- 	"cron" TEXT NOT NULL,
--- 	"last" DATETIME DEFAULT CURRENT_TIMESTAMP,
--- 	"task" TEXT NOT NULL,
--- 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
--- 	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id"),
--- );
-
--- CREATE TABLE IF NOT EXISTS "memba_schedule_cron" (
--- 	"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
--- 	"schedule_id" INTEGER NOT NULL,
--- 	"cron" TEXT NOT NULL,
--- 	FOREIGN KEY ("schedule_id") REFERENCES "memba_schedule"("id"),
--- );
-
 CREATE TABLE IF NOT EXISTS "site_account" (
 	"memba_id" INTEGER NOT NULL,
 	"user_id" VARCHAR(36) NOT NULL, -- uuid
@@ -58,6 +41,23 @@ CREATE TABLE IF NOT EXISTS "site_data" (
 	FOREIGN KEY ("site_id") REFERENCES "site_account"("site_id") -- uuid
 );
 
+-- CREATE TABLE IF NOT EXISTS "memba_schedule" (
+-- 	"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+-- 	"memba_id" INTEGER NOT NULL,
+-- 	"cron" TEXT NOT NULL,
+-- 	"last" DATETIME DEFAULT CURRENT_TIMESTAMP,
+-- 	"task" TEXT NOT NULL,
+-- 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
+-- 	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id"),
+-- );
+
+-- CREATE TABLE IF NOT EXISTS "memba_schedule_cron" (
+-- 	"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+-- 	"schedule_id" INTEGER NOT NULL,
+-- 	"cron" TEXT NOT NULL,
+-- 	FOREIGN KEY ("schedule_id") REFERENCES "memba_schedule"("id"),
+-- );
+
 -- CREATE TABLE IF NOT EXISTS "site_link" (
 -- 	"id" INTEGER PRIMARY KEY AUTOINCREMENT,
 -- 	"memba_id" INTEGER NOT NULL,
@@ -69,3 +69,15 @@ CREATE TABLE IF NOT EXISTS "site_data" (
 -- 	FOREIGN KEY ("user_id") REFERENCES "site_account"("user_id"), -- uuid
 -- 	FOREIGN KEY ("site_id") REFERENCES "site_account"("site_id") -- uuid
 -- );
+
+-- # site_link_table = make_table(
+-- # 	"site_link",
+-- # 	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
+-- # 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
+-- # 	sqlalchemy.Column("user_id", sqlalchemy.BLOB, nullable=False),
+-- # 	sqlalchemy.Column("site_id", sqlalchemy.BLOB, nullable=False),
+-- # 	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+-- # 	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
+-- # 	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
+-- # 	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
+-- # )
