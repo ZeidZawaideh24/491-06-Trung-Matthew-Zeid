@@ -32,14 +32,14 @@ site_account_table = make_table(
 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
 	sqlalchemy.Column("user_id", sqlalchemy.BLOB, nullable=False),
 	sqlalchemy.Column("site_id", sqlalchemy.BLOB, nullable=False),
-	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
 	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
 	sqlalchemy.Column("updated", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
 	sqlalchemy.PrimaryKeyConstraint("user_id", "site_id"),
 	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"])
 )
 
-site_log_table = make_table(
+site_data_table = make_table(
 	"site_log",
 	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
@@ -52,17 +52,17 @@ site_log_table = make_table(
 	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
 )
 
-site_link_table = make_table(
-	"site_link",
-	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
-	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
-	sqlalchemy.Column("user_id", sqlalchemy.BLOB, nullable=False),
-	sqlalchemy.Column("site_id", sqlalchemy.BLOB, nullable=False),
-	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
-	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
-	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
-	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
-)
+# site_link_table = make_table(
+# 	"site_link",
+# 	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
+# 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
+# 	sqlalchemy.Column("user_id", sqlalchemy.BLOB, nullable=False),
+# 	sqlalchemy.Column("site_id", sqlalchemy.BLOB, nullable=False),
+# 	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+# 	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
+# 	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
+# 	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
+# )
 
 async def start():
 	global DATA_DB
