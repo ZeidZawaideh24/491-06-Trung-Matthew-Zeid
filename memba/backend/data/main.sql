@@ -10,6 +10,13 @@ CREATE TABLE IF NOT EXISTS "memba_account" (
 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS "memba_account_key" (
+	"memba_id" INTEGER PRIMARY KEY NOT NULL,
+	"key" TEXT NOT NULL,
+	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id")
+);
+
 -- CREATE TABLE IF NOT EXISTS "memba_schedule" (
 -- 	"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 -- 	"memba_id" INTEGER NOT NULL,
@@ -29,8 +36,8 @@ CREATE TABLE IF NOT EXISTS "memba_account" (
 
 CREATE TABLE IF NOT EXISTS "site_account" (
 	"memba_id" INTEGER NOT NULL,
-	"user_id" BLOB NOT NULL, -- uuid
-	"site_id" BLOB NOT NULL, -- uuid, basically plugin id
+	"user_id" VARCHAR(36) NOT NULL, -- uuid
+	"site_id" VARCHAR(36) NOT NULL, -- uuid, basically plugin id
 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"updated" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"json" TEXT NOT NULL,
@@ -41,8 +48,8 @@ CREATE TABLE IF NOT EXISTS "site_account" (
 CREATE TABLE IF NOT EXISTS "site_data" (
 	"id" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"memba_id" INTEGER NOT NULL,
-	"user_id" BLOB NOT NULL, -- uuid
-	"site_id" BLOB NOT NULL, -- uuid
+	"user_id" VARCHAR(36) NOT NULL, -- uuid
+	"site_id" VARCHAR(36) NOT NULL, -- uuid
 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"updated" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"json" TEXT NOT NULL,
