@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS "site_log" (
 	"site_id" BLOB NOT NULL, -- uuid
 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"updated" DATETIME DEFAULT CURRENT_TIMESTAMP,
-	"data" TEXT NOT NULL,
+	"data" TEXT NOT NULL, -- This should store chunk of links
 	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id"),
 	FOREIGN KEY ("user_id") REFERENCES "site_account"("user_id"), -- uuid
 	FOREIGN KEY ("site_id") REFERENCES "site_account"("site_id") -- uuid

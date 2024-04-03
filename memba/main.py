@@ -18,5 +18,9 @@ logging.basicConfig(
 	datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-# Temporary
-from memba.frontend import host
+import memba.backend.base.config as memba_config
+
+# frontend (daemon, tui) / backend (scheduler, plugin, etc.)
+
+if memba_config.CONFIG.server:
+	from memba.frontend import host

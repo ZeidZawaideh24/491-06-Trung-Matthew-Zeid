@@ -10,10 +10,9 @@ import memba.backend.base.misc as memba_misc
 
 TRACK_ENGINE: sqlalchemy.ext.asyncio.AsyncEngine = None
 TRACK_DB: apscheduler.datastores.sqlalchemy.SQLAlchemyDataStore = None
-TRACK_TASK = None
 TRACK_SCHEDULE: apscheduler.AsyncScheduler = None
 
-async def schedule():
+async def track():
 	global TRACK_DB
 	global TRACK_SCHEDULE
 	try:
@@ -26,12 +25,14 @@ async def schedule():
 			level=memba_misc.logging.ERROR
 		)
 
+async def check(plugin_db):
+	pass
+
 async def start():
 	global TRACK_ENGINE
 	global TRACK_DB
-	global TRACK_TASK
 	
-	if pathlib.Path(memba_config.config["schedule_path"]).exists():
+	if pathlib.Path(memba_config.CONFIG.schedule_path).exists():
 		memba_misc.log(
 			"SCHEDULE",
 			msg="Connecting to existing schedule database.",
@@ -44,10 +45,9 @@ async def start():
 			level=memba_misc.logging.INFO
 		)
 	
-	TRACK_ENGINE = sqlalchemy.ext.asyncio.create_async_engine(f"sqlite+aiosqlite:///{memba_config.config['schedule_path']}")
-	pathlib.Path(memba_config.config["schedule_path"]).parent.mkdir(parents=True, exist_ok=True)
+	TRACK_ENGINE = sqlalchemy.ext.asyncio.create_async_engine(f"sqlite+aiosqlite:///{memba_config.CONFIG.schedule_path}")
+	pathlib.Path(memba_config.CONFIG.schedule_path).parent.mkdir(parents=True, exist_ok=True)
 	TRACK_DB = apscheduler.datastores.sqlalchemy.SQLAlchemyDataStore(engine=TRACK_ENGINE)
-	TRACK_TASK = schedule()
 
 async def close():
 	global TRACK_SCHEDULE

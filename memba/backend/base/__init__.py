@@ -25,7 +25,8 @@ async def core_loop():
 		await asyncio.sleep(1)
 
 async def loop():
-	await asyncio.gather(memba_track.TRACK_TASK, core_loop())
+	# await asyncio.gather(memba_track.track(), core_loop())
+	await asyncio.gather(memba_track.track())
 
 async def close():
 	await memba_track.close()
