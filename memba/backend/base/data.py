@@ -27,6 +27,15 @@ memba_account_table = make_table(
 	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now())
 )
 
+memba_account_key_table = make_table(
+	"memba_account_key",
+	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
+	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
+	sqlalchemy.Column("key", sqlalchemy.Text, nullable=False),
+	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"])
+)
+
 site_account_table = make_table(
 	"site_account",
 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
