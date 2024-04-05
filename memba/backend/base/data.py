@@ -7,6 +7,18 @@ import databases
 import sqlite3
 import pathlib
 
+import apscheduler.abc
+import dill
+import attrs
+
+@attrs.define(kw_only=True, eq=False)
+class DillSerializer(apscheduler.abc.Serializer):
+	def serialize(self, obj: object = None) -> bytes:
+		return dill.dumps(obj)
+
+	def deserialize(self, serialized: bytes = None):
+		return dill.loads(serialized)
+
 class ForeignKeyConnection(sqlite3.Connection):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

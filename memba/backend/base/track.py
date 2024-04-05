@@ -6,8 +6,10 @@ import apscheduler # https://github.com/agronholm/apscheduler/issues/465
 import apscheduler.datastores.sqlalchemy
 import sqlalchemy.ext.asyncio
 
+import memba.backend.base.data as memba_data
 import memba.backend.base.config as memba_config
 import memba.backend.base.misc as memba_misc
+import memba.backend.plugin.base as memba_plugin
 
 TRACK_ENGINE: sqlalchemy.ext.asyncio.AsyncEngine = None
 TRACK_DB: apscheduler.datastores.sqlalchemy.SQLAlchemyDataStore = None
@@ -23,8 +25,10 @@ for evt_class in vars(apscheduler):
 		TRACK_EVT.append(getattr(apscheduler, evt_class))
 
 async def handle(event: apscheduler.Event):
-	# [TODO] Event reroute to all plugins
-	print(f"Received {event.__class__.__name__}")
+	await memba_plugin.trigger(
+		memba_misc.camel_to_snake(event.__class__.__name__), False,
+		raw=event
+	)
 
 async def track():
 	global TRACK_DB
@@ -36,6 +40,18 @@ async def track():
 		async with apscheduler.AsyncScheduler(data_store=TRACK_DB) as scheduler:
 			TRACK_SCHEDULE = scheduler
 			TRACK_EVT_INST = TRACK_SCHEDULE.subscribe(handle, TRACK_EVT)
+			job_list = await TRACK_SCHEDULE.get_jobs()
+
+			# [TODO] Keep track of which plugins is still exist
+				# To not trigger leftover jobs
+			# for job in job_list:
+			# 	print(job.id)
+
+			await memba_plugin.trigger(
+				"load", False,
+				schedule=TRACK_SCHEDULE
+			)
+
 			await TRACK_SCHEDULE.run_until_stopped()
 	except Exception as e:
 		memba_misc.log(
@@ -43,16 +59,6 @@ async def track():
 			msg=f"Error: {e}",
 			level=memba_misc.logging.ERROR
 		)
-
-async def check(plugin_db):
-	# [TODO] Keep track of which plugins is still exist
-		# To not trigger leftover jobs
-	global TRACK_SCHEDULE
-
-	job_list = await TRACK_SCHEDULE.get_jobs()
-
-	for job in job_list:
-		pass
 
 async def start():
 	global TRACK_ENGINE
@@ -73,7 +79,10 @@ async def start():
 	
 	TRACK_ENGINE = sqlalchemy.ext.asyncio.create_async_engine(f"sqlite+aiosqlite:///{memba_config.CONFIG.schedule_path}")
 	pathlib.Path(memba_config.CONFIG.schedule_path).parent.mkdir(parents=True, exist_ok=True)
-	TRACK_DB = apscheduler.datastores.sqlalchemy.SQLAlchemyDataStore(engine=TRACK_ENGINE)
+	TRACK_DB = apscheduler.datastores.sqlalchemy.SQLAlchemyDataStore(
+		engine=TRACK_ENGINE,
+		# serializer=memba_data.DillSerializer
+	)
 
 async def close():
 	global TRACK_SCHEDULE

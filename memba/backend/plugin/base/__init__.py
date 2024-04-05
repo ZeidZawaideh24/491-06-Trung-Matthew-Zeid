@@ -31,12 +31,13 @@ async def trigger(evt, flag: bool | str = False, *args, **kwargs):
 					await getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs)
 	else:
 		await asyncio.gather(
-			*[
-				getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs)
+			*map(
+				lambda curr_plugin: getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs),
+				(curr_plugin
 				for curr_plugin in curr_iter
 					if hasattr(PLUGIN_DB, curr_plugin) and isinstance(getattr(PLUGIN_DB, curr_plugin), PLUGIN_NS["V1"]) and
-						evt in getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt
-			]
+						evt in getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt)
+			)
 		)
 
 async def start():

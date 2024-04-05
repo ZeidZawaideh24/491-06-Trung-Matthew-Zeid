@@ -8,10 +8,7 @@ import asyncio
 async def start():
 	await memba_data.start()
 	await memba_plugin.start()
-
 	await memba_track.start()
-	await memba_track.check(memba_plugin.PLUGIN_DB)
-
 	await memba_plugin.trigger("start")
 
 async def core_loop():
@@ -28,6 +25,7 @@ async def loop():
 	await asyncio.gather(memba_track.track())
 
 async def close():
+	await memba_plugin.trigger("close")
 	await memba_track.close()
 	await memba_plugin.close()
 	await memba_data.close()

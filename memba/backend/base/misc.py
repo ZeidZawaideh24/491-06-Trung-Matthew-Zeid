@@ -2,6 +2,9 @@ import logging
 
 MEMBA_VERSION = "0.0.1"
 
+def camel_to_snake(s):
+	return ''.join(['_' + c.lower() if c.isupper() else c for c in s]).lstrip('_')
+
 def log(
 	*args,
 	msg = "", level = logging.INFO,
