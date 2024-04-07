@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS "site_data" (
 	"site_id" VARCHAR(36) NOT NULL, -- uuid
 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"updated" DATETIME DEFAULT CURRENT_TIMESTAMP,
-	"json" TEXT NOT NULL,
+	"json" TEXT NOT NULL, -- Used to track what link downloaded/uploaded so far
 	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id"),
 	FOREIGN KEY ("user_id") REFERENCES "site_account"("user_id"), -- uuid
 	FOREIGN KEY ("site_id") REFERENCES "site_account"("site_id") -- uuid
