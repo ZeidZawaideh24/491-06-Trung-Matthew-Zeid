@@ -40,7 +40,7 @@ async def track():
 		async with apscheduler.AsyncScheduler(data_store=TRACK_DB) as scheduler:
 			TRACK_SCHEDULE = scheduler
 			TRACK_EVT_INST = TRACK_SCHEDULE.subscribe(handle, TRACK_EVT)
-			job_list = await TRACK_SCHEDULE.get_jobs()
+			# job_list = await TRACK_SCHEDULE.get_jobs()
 
 			# [TODO] Keep track of which plugins is still exist
 				# To not trigger leftover jobs
@@ -94,3 +94,135 @@ async def close():
 	)
 	TRACK_EVT_INST.unsubscribe()
 	await asyncio.gather(TRACK_SCHEDULE.stop(), TRACK_SCHEDULE.wait_until_stopped())
+
+###################### API ######################
+
+import apscheduler.triggers.calendarinterval
+import apscheduler.triggers.cron
+import apscheduler.triggers.interval
+import apscheduler.triggers.combining
+import apscheduler.triggers.date
+
+"""
+[
+	{
+		"kind": "interval",
+		"weeks": 1,
+		"days": 1,
+		"hours": 1,
+		"minutes": 1,
+		"seconds": 1,
+		"microseconds": 1,
+		"start_time": null,
+		"end_time": null,
+	},
+	{
+		"kind": "calendar",
+		"years": 1,
+		"months": 1,
+		"weeks": 1,
+		"days": 1,
+		"hour": 1,
+		"minute": 1,
+		"second": 1,
+		"start_time": null,
+		"end_time": null,
+	},
+	{
+		"kind": "cron",
+		"year": 2020,
+		"month": 1,
+		"day": 1,
+		"week": 1,
+		"day_of_week": 1,
+		"hour": 1,
+		"minute": 1,
+		"second": 1,
+		"start_time": null,
+		"end_time": null,
+		"timezone": null,
+	},
+	{
+		"kind": "and",
+		"data": [...],
+	},
+	{
+		"kind": "or",
+		"data": [...],
+	}
+]
+"""
+
+async def build_trigger(data):
+	# Build the final trigger object from the json
+	curr = None
+	match data["kind"]:
+		case "interval":
+			curr = apscheduler.triggers.interval.IntervalTrigger(
+				weeks=data["weeks"],
+				days=data["days"],
+				hours=data["hours"],
+				minutes=data["minutes"],
+				seconds=data["seconds"],
+				microseconds=data["microseconds"],
+				start_time=data["start_time"],
+				end_time=data["end_time"],
+			)
+		case "calendar":
+			curr = apscheduler.triggers.calendarinterval.CalendarIntervalTrigger(
+				years=data["years"],
+				months=data["months"],
+				weeks=data["weeks"],
+				days=data["days"],
+				hour=data["hour"],
+				minute=data["minute"],
+				second=data["second"],
+				start_time=data["start_time"],
+				end_time=data["end_time"],
+			)
+		case "cron":
+			curr = apscheduler.triggers.cron.CronTrigger(
+				year=data["year"],
+				month=data["month"],
+				day=data["day"],
+				week=data["week"],
+				day_of_week=data["day_of_week"],
+				hour=data["hour"],
+				minute=data["minute"],
+				second=data["second"],
+				start_time=data["start_time"],
+				end_time=data["end_time"],
+				timezone=data["timezone"],
+			)
+		case "and":
+			curr = apscheduler.triggers.combining.AndTrigger(
+				*map(lambda x: await build_trigger(x), data["data"])
+			)
+		case "or":
+			curr = apscheduler.triggers.combining.OrTrigger(
+				*map(lambda x: await build_trigger(x), data["data"])
+			)
+		case _:
+			pass
+	return curr
+
+async def set_track(account, plugin, data):
+	global TRACK_SCHEDULE
+	job_uuid = TRACK_SCHEDULE.add_job(
+		memba_plugin.v1_handle,
+		await build_trigger(data),
+		kwargs={
+			"__memba_name__": name
+		}
+	)
+
+###################### API ######################
+
+async def get_track(memba_id: int, site_id: str, user_id: str, data: dict):
+	pass
+
+async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
+	pass
+
+async def del_track(memba_id: int, site_id: str, user_id: str):
+	pass

@@ -41,6 +41,14 @@ CREATE TABLE IF NOT EXISTS "site_data" (
 	FOREIGN KEY ("site_id") REFERENCES "site_account"("site_id") -- uuid
 );
 
+CREATE TABLE IF NOT EXISTS "site_track" (
+	"schedule_id" VARCHAR(36) PRIMARY KEY NOT NULL, -- uuid
+	"memba_id" INTEGER NOT NULL,
+	"site_id" VARCHAR(36) NOT NULL, -- uuid
+	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id"),
+	FOREIGN KEY ("site_id") REFERENCES "site_account"("site_id") -- uuid
+);
+
 -- CREATE TABLE IF NOT EXISTS "memba_schedule" (
 -- 	"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 -- 	"memba_id" INTEGER NOT NULL,

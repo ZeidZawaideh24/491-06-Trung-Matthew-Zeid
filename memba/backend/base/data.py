@@ -109,3 +109,89 @@ async def close():
 	)
 	await DATA_DB.disconnect()
 	DATA_DB = None
+
+###################### API ######################
+
+import hashlib
+
+async def set_account(email: str, pwd: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		if await conn.execute(memba_account_table.select().where(memba_account_table.c.email == email)).first():
+			raise ValueError("Account already exist.")
+		await conn.execute(memba_account_table.insert().values(
+			pwd=hashlib.sha256(pwd.encode()).hexdigest(),
+			email=email
+		))
+
+async def del_account(email: str, pwd: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		account = await conn.execute(memba_account_table.select().where(memba_account_table.c.email == email)).first()
+		if not account:
+			raise ValueError("Account does not exist.")
+		if account["pwd"] != hashlib.sha256(pwd.encode()).hexdigest():
+			raise ValueError("Incorrect password.")
+		await conn.execute(memba_account_table.delete().where(memba_account_table.c.email == email))
+
+async def get_account_id(email: str, pwd: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		account = await conn.execute(memba_account_table.select().where(memba_account_table.c.email == email)).first()
+		if not account:
+			raise ValueError("Account does not exist.")
+		if account["pwd"] != hashlib.sha256(pwd.encode()).hexdigest():
+			raise ValueError("Incorrect password.")
+		return account["id"]
+	
+async def set_account_key(memba_id: int, key: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		await conn.execute(memba_account_key_table.insert().values(
+			memba_id=memba_id,
+			key=key)
+		)
+
+import uuid
+import json
+
+async def set_site_account(memba_id: int, site_id: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		await conn.execute(site_account_table.insert().values(
+			memba_id=memba_id,
+			user_id=uuid.uuid4().hex,
+			site_id=site_id,
+			json="{}"
+		))
+
+async def get_site_account_data(memba_id: int, site_id: str, user_id: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		row = await conn.execute(site_data_table.select().where(
+			(site_data_table.c.memba_id == memba_id) &
+			(site_data_table.c.user_id == user_id) &
+			(site_data_table.c.site_id == site_id)
+		)).first()
+
+		if not row:
+			return None
+		
+		return row
+
+async def set_site_account_data(memba_id: int, site_id: str, user_id: str, data: dict):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		row = await get_site_account_data(memba_id, site_id, user_id)
+		if not row:
+			return None
+	
+		# Change the JSON
+		row["json"] = json.dumps(data)
+
+		# Update the row
+		await conn.execute(site_data_table.update().where(
+			(site_data_table.c.memba_id == memba_id) &
+			(site_data_table.c.user_id == user_id) &
+			(site_data_table.c.site_id == site_id)
+		).values(row))

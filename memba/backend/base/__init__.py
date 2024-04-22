@@ -30,54 +30,6 @@ async def close():
 	await memba_plugin.close()
 	await memba_data.close()
 
-"""
-[
-	{
-		"kind": "interval",
-		"weeks": 1,
-		"days": 1,
-		"hours": 1,
-		"minutes": 1,
-		"seconds": 1,
-		"microseconds": 1,
-		"start_time": null,
-		"end_time": null,
-	},
-	{
-		"kind": "calendar",
-		"years": 1,
-		"months": 1,
-		"weeks": 1,
-		"days": 1,
-		"hour": 1,
-		"minute": 1,
-		"second": 1,
-		"start_time": null,
-		"end_time": null,
-	},
-	{
-		"kind": "cron",
-		"year": 2020,
-		"month": 1,
-		"day": 1,
-		"week": 1,
-		"day_of_week": 1,
-		"hour": 1,
-		"minute": 1,
-		"second": 1,
-		"start_time": null,
-		"end_time": null,
-		"timezone": null,
-	},
-	{
-		"kind": "and",
-	},
-	{
-		"kind": "or",
-	}
-]
-"""
-
 # Spawn asyncio task to run memba_track
 
 # Print all column of memba_account table using sqlite syntax
