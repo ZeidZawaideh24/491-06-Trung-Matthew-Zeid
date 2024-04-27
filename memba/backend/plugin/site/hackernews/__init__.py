@@ -12,6 +12,29 @@ async def load(schedule: apscheduler.AsyncScheduler):
 
 async def job_acquired(raw):
 	print("Job acquired.", raw)
+	# try:
+	# 	# print(globals()['sys'].modules)
+	# 	print(__builtins__.keys())
+	# 	# pass
+	# except Exception as e:
+	# 	print("Error: ", e)
+	# try:
+	# 	await schedule.add_schedule(
+	# 		memba_plugin_core.v1_handle,
+	# 		# lambda *args, **kwargs: handle(*args, **kwargs),
+	# 		apscheduler.triggers.interval.IntervalTrigger(
+	# 			seconds=5,
+	# 		),
+	# 		kwargs={
+	# 			"test": "test",
+	# 			"__memba_name__": "demo"
+	# 		},
+	# 	)
+	# except Exception as e:
+	# 	print(e)
+	# 	# Stack trace of the exception
+	# 	import traceback
+	# 	traceback.print_exc()
 
 MEMBA_PLUGIN_V1 = {
 	"name": __name__,

@@ -196,25 +196,29 @@ async def build_trigger(data):
 			)
 		case "and":
 			curr = apscheduler.triggers.combining.AndTrigger(
-				*map(lambda x: await build_trigger(x), data["data"])
+				asyncio.gather(
+					*[build_trigger(x) for x in data["data"]],
+				)
 			)
 		case "or":
 			curr = apscheduler.triggers.combining.OrTrigger(
-				*map(lambda x: await build_trigger(x), data["data"])
+				asyncio.gather(
+					*[build_trigger(x) for x in data["data"]],
+				)
 			)
 		case _:
 			pass
 	return curr
 
-async def set_track(account, plugin, data):
-	global TRACK_SCHEDULE
-	job_uuid = TRACK_SCHEDULE.add_job(
-		memba_plugin.v1_handle,
-		await build_trigger(data),
-		kwargs={
-			"__memba_name__": name
-		}
-	)
+# async def set_track(account, plugin, data):
+# 	global TRACK_SCHEDULE
+# 	job_uuid = TRACK_SCHEDULE.add_job(
+# 		memba_plugin.v1_handle,
+# 		await build_trigger(data),
+# 		kwargs={
+# 			"__memba_name__": name
+# 		}
+# 	)
 
 ###################### API ######################
 
