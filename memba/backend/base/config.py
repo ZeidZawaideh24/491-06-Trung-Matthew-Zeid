@@ -10,4 +10,6 @@ CONFIG.add_argument("--server", help="Run as server", action="store_true")
 CONFIG.add_argument("--host", type=str, default="localhost")
 CONFIG.add_argument("--port", type=int, default=30303)
 
+CONFIG.add_argument("extra", nargs=argparse.REMAINDER)
+
 CONFIG = CONFIG.parse_args()
