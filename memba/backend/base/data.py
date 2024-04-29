@@ -1,5 +1,6 @@
 from . import config as memba_config
 from . import misc as memba_misc
+from . import track as memba_track
 
 import sqlalchemy
 import sqlalchemy.dialects.sqlite
@@ -33,7 +34,7 @@ DATA_DB: databases.Database | None = None
 memba_account_table = make_table(
 	"memba_account",
 	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
-	sqlalchemy.Column("user", sqlalchemy.Text, nullable=False, unique=True),
+	# sqlalchemy.Column("user", sqlalchemy.Text, nullable=False, unique=True),
 	sqlalchemy.Column("pwd", sqlalchemy.Text, nullable=False),
 	sqlalchemy.Column("email", sqlalchemy.Text, nullable=False, unique=True),
 	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now())
@@ -61,17 +62,27 @@ site_account_table = make_table(
 )
 
 site_data_table = make_table(
-	"site_log",
+	"site_data",
 	sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False),
 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
 	sqlalchemy.Column("user_id", sqlalchemy.VARCHAR(36), nullable=False),
 	sqlalchemy.Column("site_id", sqlalchemy.VARCHAR(36), nullable=False),
+	sqlalchemy.Column("schedule_id", sqlalchemy.VARCHAR(36), nullable=True),
 	sqlalchemy.Column("created", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
 	sqlalchemy.Column("updated", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
 	sqlalchemy.Column("json", sqlalchemy.Text, nullable=False),
 	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
 	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
 )
+
+# site_track_table = make_table(
+# 	"site_track",
+# 	sqlalchemy.Column("schedule_id", sqlalchemy.VARCHAR(36), primary_key=True, nullable=False),
+# 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
+# 	sqlalchemy.Column("site_id", sqlalchemy.VARCHAR(36), nullable=False),
+# 	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
+# 	sqlalchemy.ForeignKeyConstraint(["site_id"], ["site_account.site_id"])
+# )
 
 async def start():
 	global DATA_DB
@@ -132,9 +143,13 @@ async def del_account(email: str, pwd: str):
 			raise ValueError("Account does not exist.")
 		if account["pwd"] != hashlib.sha256(pwd.encode()).hexdigest():
 			raise ValueError("Incorrect password.")
-		await conn.execute(memba_account_table.delete().where(memba_account_table.c.email == email))
+		
+		# site_track = await conn.execute(site_track_table.select().where(site_track_table.c.memba_id == account["id"])).fetchall()
+		# for track in site_track:
+		# 	memba_track.del_track(account["id"], track["site_id"])
+		# 	await del_site_track(account["id"], track["site_id"])
 
-async def get_account_id(email: str, pwd: str):
+async def get_account(email: str, pwd: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
 		account = await conn.execute(memba_account_table.select().where(memba_account_table.c.email == email)).first()
@@ -144,47 +159,80 @@ async def get_account_id(email: str, pwd: str):
 			raise ValueError("Incorrect password.")
 		return account["id"]
 	
-async def set_account_key(memba_id: int, key: str):
-	global DATA_DB
-	async with DATA_DB.connection() as conn:
-		await conn.execute(memba_account_key_table.insert().values(
-			memba_id=memba_id,
-			key=key)
-		)
+# async def set_account_key(memba_id: int, key: str):
+# 	global DATA_DB
+# 	async with DATA_DB.connection() as conn:
+# 		await conn.execute(memba_account_key_table.insert().values(
+# 			memba_id=memba_id,
+# 			key=key)
+# 		)
 
 import uuid
 import json
 
-async def set_site_account(memba_id: int, site_id: str):
+async def set_site_account(memba_id: int, site_id: str, data: dict):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
+		acc_id = uuid.uuid4().hex
+
 		await conn.execute(site_account_table.insert().values(
 			memba_id=memba_id,
-			user_id=uuid.uuid4().hex,
+			user_id=acc_id,
 			site_id=site_id,
-			json="{}"
+			json=json.dumps(data)
 		))
 
-async def get_site_account_data(memba_id: int, site_id: str, user_id: str):
+		return acc_id
+
+async def get_site_account(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		row = await conn.execute(site_data_table.select().where(
+		return await conn.execute(site_account_table.select().where(
+			(site_account_table.c.memba_id == memba_id) &
+			(site_account_table.c.user_id == user_id) &
+			(site_account_table.c.site_id == site_id)
+		)).first()
+	
+async def get_site_account_all(memba_id: int, site_id: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		return await conn.execute(site_account_table.select().where(
+			(site_account_table.c.memba_id == memba_id) &
+			(site_account_table.c.site_id == site_id)
+		)).fetchall()
+	
+async def del_site_account(memba_id: int, site_id: str, user_id: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		await del_site_data(memba_id, site_id, user_id)
+
+		await conn.execute(site_account_table.delete().where(
+			(site_account_table.c.memba_id == memba_id) &
+			(site_account_table.c.user_id == user_id) &
+			(site_account_table.c.site_id == site_id)
+		))
+
+async def get_site_data(memba_id: int, site_id: str, user_id: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		return await conn.execute(site_data_table.select().where(
 			(site_data_table.c.memba_id == memba_id) &
 			(site_data_table.c.user_id == user_id) &
 			(site_data_table.c.site_id == site_id)
 		)).first()
 
-		if not row:
-			return None
-		
-		return row
-
-async def set_site_account_data(memba_id: int, site_id: str, user_id: str, data: dict):
+async def set_site_data(memba_id: int, site_id: str, user_id: str, data: dict):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		row = await get_site_account_data(memba_id, site_id, user_id)
-		if not row:
-			return None
+		row = await get_site_data(memba_id, site_id, user_id)
+		if len(row) == 0:
+			await conn.execute(site_data_table.insert().values(
+				memba_id=memba_id,
+				user_id=user_id,
+				site_id=site_id,
+				json=json.dumps(data)
+			))
+			return
 	
 		# Change the JSON
 		row["json"] = json.dumps(data)
@@ -195,3 +243,62 @@ async def set_site_account_data(memba_id: int, site_id: str, user_id: str, data:
 			(site_data_table.c.user_id == user_id) &
 			(site_data_table.c.site_id == site_id)
 		).values(row))
+
+async def del_site_data(memba_id: int, site_id: str, user_id: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		await conn.execute(site_data_table.delete().where(
+			(site_data_table.c.memba_id == memba_id) &
+			(site_data_table.c.user_id == user_id) &
+			(site_data_table.c.site_id == site_id)
+		))
+
+async def set_schedule(memba_id: int, site_id: str, user_id: str, schedule_id: str):
+	global DATA_DB
+	async with DATA_DB.connection() as conn:
+		row = await get_site_data(memba_id, site_id, user_id)
+		if len(row) == 0:
+			return
+		
+		row["schedule_id"] = schedule_id
+
+		await conn.execute(site_data_table.update().where(
+			(site_data_table.c.memba_id == memba_id) &
+			(site_data_table.c.user_id == user_id) &
+			(site_data_table.c.site_id == site_id)
+		).values(row))
+
+# async def set_site_track(memba_id: int, site_id: str, schedule_id: str):
+# 	global DATA_DB
+# 	async with DATA_DB.connection() as conn:
+# 		await conn.execute(site_track_table.insert().values(
+# 			memba_id=memba_id,
+# 			site_id=site_id,
+# 			schedule_id=schedule_id
+# 		))
+
+# async def get_site_track(memba_id: int, site_id: str):
+# 	global DATA_DB
+# 	async with DATA_DB.connection() as conn:
+# 		return await conn.execute(site_track_table.select().where(
+# 			(site_track_table.c.memba_id == memba_id) &
+# 			(site_track_table.c.site_id == site_id)
+# 		)).first()
+	
+# async def del_site_track(memba_id: int, site_id: str):
+# 	global DATA_DB
+# 	async with DATA_DB.connection() as conn:
+# 		await conn.execute(site_account_table.delete().where(
+# 			(site_account_table.c.memba_id == memba_id) &
+# 			(site_account_table.c.site_id == site_id)
+# 		))
+
+# 		await conn.execute(site_data_table.delete().where(
+# 			(site_data_table.c.memba_id == memba_id) &
+# 			(site_data_table.c.site_id == site_id)
+# 		)).fetchall()
+
+# 		await conn.execute(site_track_table.delete().where(
+# 			(site_track_table.c.memba_id == memba_id) &
+# 			(site_track_table.c.site_id == site_id)
+# 		))

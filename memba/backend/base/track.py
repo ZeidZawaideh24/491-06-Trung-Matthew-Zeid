@@ -210,23 +210,54 @@ async def build_trigger(data):
 			pass
 	return curr
 
-# async def set_track(account, plugin, data):
-# 	global TRACK_SCHEDULE
-# 	job_uuid = TRACK_SCHEDULE.add_job(
-# 		memba_plugin.v1_handle,
-# 		await build_trigger(data),
-# 		kwargs={
-# 			"__memba_name__": name
-# 		}
-# 	)
-
-###################### API ######################
-
-async def get_track(memba_id: int, site_id: str, user_id: str, data: dict):
-	pass
-
 async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
-	pass
+	global TRACK_SCHEDULE
+
+	row = await memba_data.get_site_data(memba_id, site_id, user_id)
+	if row is not None and row["schedule_id"] is not None:
+		return None
+
+	return str(TRACK_SCHEDULE.add_job(
+		memba_plugin.v1_handle,
+		await build_trigger(data),
+		kwargs={
+			"__memba_id__": memba_id,
+			"__site_id__": site_id,
+			"__user_id__": user_id,
+		}
+	))
+
+# async def get_track(account, plugin):
+# 	global TRACK_SCHEDULE
+# 	job_uuid = await memba_data.get_site_track(account, plugin)
+# 	if job_uuid is None:
+# 		return None
+# 	return TRACK_SCHEDULE.get_job(job_uuid)
+
+async def get_track(memba_id: int, site_id: str, user_id: str):
+	global TRACK_SCHEDULE
+	job_uuid = await memba_data.get_site_data(memba_id, site_id, user_id)
+	if job_uuid is None:
+		return None
+	return TRACK_SCHEDULE.get_job(job_uuid)
+
+# async def del_track(account, plugin):
+# 	global TRACK_SCHEDULE
+# 	job_uuid = await memba_data.get_site_track(account, plugin)
+# 	if job_uuid is None:
+# 		return None
+# 	await memba_data.del_site_track(account, plugin)
+# 	return TRACK_SCHEDULE.remove_job(job_uuid)
 
 async def del_track(memba_id: int, site_id: str, user_id: str):
-	pass
+	global TRACK_SCHEDULE
+	job_uuid = await memba_data.get_site_data(memba_id, site_id, user_id)
+	if job_uuid is None:
+		return None
+	# await memba_data.del_site_data(memba_id, site_id, user_id)
+	# Update schedule_id to None
+	await memba_data.set_schedule(memba_id, site_id, user_id, None)
+	return TRACK_SCHEDULE.remove_job(job_uuid)
+
+async def get_all_site_id(account):
+	return await memba_data.get_all_site_id(account)

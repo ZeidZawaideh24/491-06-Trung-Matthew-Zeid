@@ -14,4 +14,4 @@ v1 = v1_lib()
 """))()
 
 async def v1_handle(*args, **kwargs):
-	await globals()['v1'].TRIGGER_FUNC("handle", kwargs.get("__memba_name__", False), *args, **kwargs)
+	await globals()['v1'].TRIGGER_FUNC("handle", kwargs.get("__memba_id__", False), *args, **kwargs)

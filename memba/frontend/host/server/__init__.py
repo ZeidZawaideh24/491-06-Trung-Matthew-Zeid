@@ -7,6 +7,8 @@ import functools
 
 import memba.backend.base.misc as memba_misc
 import memba.backend.base as memba_base
+import memba.backend.base.track as memba_track
+import memba.backend.base.data as memba_data
 
 class State:
 	socket: aiohttp.web.WebSocketResponse | None = None
@@ -26,6 +28,16 @@ class Server:
 		self.queue = asyncio.Queue()
 
 		self.route.get("/dev/ws")(self.socket_handle)
+		self.route.get("/api/v1/set_account")(self.set_account)
+		self.route.post("/api/v1/get_account")(self.get_account)
+		self.route.post("/api/v1/del_account")(self.del_account)
+		self.route.post("/api/v1/set_site_account")(self.set_site_account)
+		self.route.post("/api/v1/get_site_account")(self.get_site_account)
+		self.route.post("/api/v1/del_site_account")(self.del_site_account)
+		self.route.post("/api/v1/set_site_data")(self.set_site_data)
+		self.route.post("/api/v1/get_site_data")(self.get_site_data)
+		self.route.post("/api/v1/del_site_data")(self.del_site_data)
+
 
 	async def start(self):
 		self.app.add_routes(self.route)
@@ -51,6 +63,58 @@ class Server:
 		await self.app.cleanup()
 		if self.run is not None:
 			await self.run.cleanup()
+
+	async def change_account(func, request: aiohttp.web.Request):
+		data = await request.json()
+		if "email" not in data or "password" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		res = await func(data["email"], data["password"])
+		if res:
+			return aiohttp.web.json_response({
+				"status": "OK",
+			})
+		else:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+
+	async def set_account(self, request: aiohttp.web.Request):
+		return await self.change_account(memba_data.set_account, request)
+		
+	async def get_account(self, request: aiohttp.web.Request):
+		return await self.change_account(memba_data.get_account, request)
+		
+	async def del_account(self, request: aiohttp.web.Request):
+		return await self.change_account(memba_data.del_account, request)
+	
+	async def set_site_account(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		await memba_data.set_site_account(data["memba_id"], data["site_id"])
+		return aiohttp.web.json_response({
+			"status": "OK",
+		})
+	
+	async def get_site_account_data(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		res = await memba_data.get_site_account_data(data["memba_id"], data["site_id"], data["user_id"])
+		if res is None:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		return aiohttp.web.json_response({
+			"status": "OK",
+			"data": res,
+		})
 
 	"""
 	Handles the websocket connection.
