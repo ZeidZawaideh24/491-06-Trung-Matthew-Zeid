@@ -37,7 +37,7 @@ class Server:
 		self.route.post("/api/v1/set_site_data")(self.set_site_data)
 		self.route.post("/api/v1/get_site_data")(self.get_site_data)
 		self.route.post("/api/v1/del_site_data")(self.del_site_data)
-
+		# self.route.post("/api/v1/set_schedule")(self.set_schedule)
 
 	async def start(self):
 		self.app.add_routes(self.route)
@@ -64,7 +64,7 @@ class Server:
 		if self.run is not None:
 			await self.run.cleanup()
 
-	async def change_account(func, request: aiohttp.web.Request):
+	async def change_account(self, func, request: aiohttp.web.Request):
 		data = await request.json()
 		if "email" not in data or "password" not in data:
 			return aiohttp.web.json_response({
@@ -99,14 +99,14 @@ class Server:
 		return aiohttp.web.json_response({
 			"status": "OK",
 		})
-	
-	async def get_site_account_data(self, request: aiohttp.web.Request):
+
+	async def get_site_account(self, request: aiohttp.web.Request):
 		data = await request.json()
 		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		res = await memba_data.get_site_account_data(data["memba_id"], data["site_id"], data["user_id"])
+		res = await memba_data.get_site_account(data["memba_id"], data["site_id"], data["user_id"])
 		if res is None:
 			return aiohttp.web.json_response({
 				"status": "ERR",
@@ -114,6 +114,104 @@ class Server:
 		return aiohttp.web.json_response({
 			"status": "OK",
 			"data": res,
+		})
+	
+	async def del_site_account(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		await memba_data.del_site_account(data["memba_id"], data["site_id"], data["user_id"])
+		return aiohttp.web.json_response({
+			"status": "OK",
+		})
+
+	async def set_site_data(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data or "data" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		await memba_data.set_site_data(data["memba_id"], data["site_id"], data["user_id"], data["data"])
+		return aiohttp.web.json_response({
+			"status": "OK",
+		})
+	
+	async def get_site_data(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		res = await memba_data.get_site_data(data["memba_id"], data["site_id"], data["user_id"])
+		if res is None:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		return aiohttp.web.json_response({
+			"status": "OK",
+			"data": res,
+		})
+	
+	async def del_site_data(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		await memba_data.del_site_data(data["memba_id"], data["site_id"], data["user_id"])
+		return aiohttp.web.json_response({
+			"status": "OK",
+		})
+
+	async def set_track(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data or "data" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		res = await memba_track.set_track(data["memba_id"], data["site_id"], data["user_id"], data["data"])
+		if res is None:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		memba_data.set_schedule(data["memba_id"], data["site_id"], data["user_id"], res)
+		return aiohttp.web.json_response({
+			"status": "OK",
+			"data": res,
+		})
+	
+	async def get_track(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		res = await memba_track.get_track(data["memba_id"], data["site_id"], data["user_id"])
+		if res is None:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		return aiohttp.web.json_response({
+			"status": "OK",
+			"data": res,
+		})
+	
+	async def del_track(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		res = await memba_track.del_track(data["memba_id"], data["site_id"], data["user_id"])
+		if res is None:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		memba_data.set_schedule(data["memba_id"], data["site_id"], data["user_id"], None)
+		return aiohttp.web.json_response({
+			"status": "OK",
 		})
 
 	"""

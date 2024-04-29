@@ -7,6 +7,9 @@ import sqlalchemy.dialects.sqlite
 import databases
 import sqlite3
 import pathlib
+import uuid
+import json
+import hashlib
 
 import apscheduler.abc
 import dill
@@ -75,15 +78,6 @@ site_data_table = make_table(
 	sqlalchemy.ForeignKeyConstraint(["user_id", "site_id"], ["site_account.user_id", "site_account.site_id"])
 )
 
-# site_track_table = make_table(
-# 	"site_track",
-# 	sqlalchemy.Column("schedule_id", sqlalchemy.VARCHAR(36), primary_key=True, nullable=False),
-# 	sqlalchemy.Column("memba_id", sqlalchemy.Integer, nullable=False),
-# 	sqlalchemy.Column("site_id", sqlalchemy.VARCHAR(36), nullable=False),
-# 	sqlalchemy.ForeignKeyConstraint(["memba_id"], ["memba_account.id"]),
-# 	sqlalchemy.ForeignKeyConstraint(["site_id"], ["site_account.site_id"])
-# )
-
 async def start():
 	global DATA_DB
 	if DATA_DB is not None:
@@ -123,8 +117,6 @@ async def close():
 
 ###################### API ######################
 
-import hashlib
-
 async def set_account(email: str, pwd: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
@@ -158,17 +150,6 @@ async def get_account(email: str, pwd: str):
 		if account["pwd"] != hashlib.sha256(pwd.encode()).hexdigest():
 			raise ValueError("Incorrect password.")
 		return account["id"]
-	
-# async def set_account_key(memba_id: int, key: str):
-# 	global DATA_DB
-# 	async with DATA_DB.connection() as conn:
-# 		await conn.execute(memba_account_key_table.insert().values(
-# 			memba_id=memba_id,
-# 			key=key)
-# 		)
-
-import uuid
-import json
 
 async def set_site_account(memba_id: int, site_id: str, data: dict):
 	global DATA_DB
@@ -267,38 +248,3 @@ async def set_schedule(memba_id: int, site_id: str, user_id: str, schedule_id: s
 			(site_data_table.c.user_id == user_id) &
 			(site_data_table.c.site_id == site_id)
 		).values(row))
-
-# async def set_site_track(memba_id: int, site_id: str, schedule_id: str):
-# 	global DATA_DB
-# 	async with DATA_DB.connection() as conn:
-# 		await conn.execute(site_track_table.insert().values(
-# 			memba_id=memba_id,
-# 			site_id=site_id,
-# 			schedule_id=schedule_id
-# 		))
-
-# async def get_site_track(memba_id: int, site_id: str):
-# 	global DATA_DB
-# 	async with DATA_DB.connection() as conn:
-# 		return await conn.execute(site_track_table.select().where(
-# 			(site_track_table.c.memba_id == memba_id) &
-# 			(site_track_table.c.site_id == site_id)
-# 		)).first()
-	
-# async def del_site_track(memba_id: int, site_id: str):
-# 	global DATA_DB
-# 	async with DATA_DB.connection() as conn:
-# 		await conn.execute(site_account_table.delete().where(
-# 			(site_account_table.c.memba_id == memba_id) &
-# 			(site_account_table.c.site_id == site_id)
-# 		))
-
-# 		await conn.execute(site_data_table.delete().where(
-# 			(site_data_table.c.memba_id == memba_id) &
-# 			(site_data_table.c.site_id == site_id)
-# 		)).fetchall()
-
-# 		await conn.execute(site_track_table.delete().where(
-# 			(site_track_table.c.memba_id == memba_id) &
-# 			(site_track_table.c.site_id == site_id)
-# 		))

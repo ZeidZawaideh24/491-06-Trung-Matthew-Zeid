@@ -29,11 +29,3 @@ async def close():
 	await memba_track.close()
 	await memba_plugin.close()
 	await memba_data.close()
-
-# Spawn asyncio task to run memba_track
-
-# Print all column of memba_account table using sqlite syntax
-# print(await memba_data.DATA_DB.fetch_all("PRAGMA table_info(memba_account)"))
-
-# List all tables name
-# print(list(record["name"] for record in await memba_data.DATA_DB.fetch_all("SELECT name FROM sqlite_master WHERE type='table';")))

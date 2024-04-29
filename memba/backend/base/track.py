@@ -227,37 +227,20 @@ async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
 		}
 	))
 
-# async def get_track(account, plugin):
-# 	global TRACK_SCHEDULE
-# 	job_uuid = await memba_data.get_site_track(account, plugin)
-# 	if job_uuid is None:
-# 		return None
-# 	return TRACK_SCHEDULE.get_job(job_uuid)
-
 async def get_track(memba_id: int, site_id: str, user_id: str):
 	global TRACK_SCHEDULE
 	job_uuid = await memba_data.get_site_data(memba_id, site_id, user_id)
 	if job_uuid is None:
 		return None
-	return TRACK_SCHEDULE.get_job(job_uuid)
-
-# async def del_track(account, plugin):
-# 	global TRACK_SCHEDULE
-# 	job_uuid = await memba_data.get_site_track(account, plugin)
-# 	if job_uuid is None:
-# 		return None
-# 	await memba_data.del_site_track(account, plugin)
-# 	return TRACK_SCHEDULE.remove_job(job_uuid)
+	return await TRACK_SCHEDULE.data_store.get_jobs([job_uuid])
 
 async def del_track(memba_id: int, site_id: str, user_id: str):
 	global TRACK_SCHEDULE
 	job_uuid = await memba_data.get_site_data(memba_id, site_id, user_id)
 	if job_uuid is None:
 		return None
-	# await memba_data.del_site_data(memba_id, site_id, user_id)
-	# Update schedule_id to None
 	await memba_data.set_schedule(memba_id, site_id, user_id, None)
-	return TRACK_SCHEDULE.remove_job(job_uuid)
+	return await TRACK_SCHEDULE.remove_job(job_uuid)
 
 async def get_all_site_id(account):
 	return await memba_data.get_all_site_id(account)
