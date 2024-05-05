@@ -1,4 +1,5 @@
 import argparse
+import pprint
 
 CONFIG = argparse.ArgumentParser()
 
@@ -15,7 +16,6 @@ CONFIG.add_argument("extra", nargs=argparse.REMAINDER)
 CONFIG = CONFIG.parse_args()
 
 async def config_api(path, data, kind="post"):
-	# import aiohttp
 	async with __import__("aiohttp").ClientSession() as session:
 	# async with aiohttp.ClientSession() as session:
 		async with getattr(session, kind)(f"http://{CONFIG.host}:{CONFIG.port}/api/v1/{path}", json=data) as resp:
@@ -59,9 +59,10 @@ def config_event():
 				res = asyncio.run(config_api("set_site_account", {
 					"memba_id": CONFIG.extra[1],
 					"site_id": CONFIG.extra[2],
+					"data": CONFIG.extra[3] if len(CONFIG.extra) > 3 else ""
 				}))
 				if res["status"] == "OK":
-					print(res["msg"])
+					print(*res["msg"])
 				else:
 					print("Error setting site account.")
 			case "get_site_account":
@@ -113,7 +114,7 @@ def config_event():
 					"user_id": CONFIG.extra[3],
 				}, "get"))
 				if res["status"] == "OK":
-					print(res["data"])
+					pprint.pprint(res["data"])
 				else:
 					print("Site data does not exist.")
 			case "del_site_data":
@@ -126,5 +127,37 @@ def config_event():
 						print("Site data deleted.")
 					case {"status": "ERR"}:
 						print("Error deleting site data.")
+			case "set_track":
+				res = asyncio.run(config_api("set_track", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+					"data": CONFIG.extra[4],
+				}))
+				if res["status"] == "OK":
+					print("Track set.")
+				else:
+					print("Error setting track.")
+			case "get_track":
+				res = asyncio.run(config_api("get_track", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+				}, "get"))
+				if res["status"] == "OK":
+					for track in res["data"]:
+						print(f"ID: {track['schedule_id']}, Next: {track['next_fire_time']}, Last: {track['last_fire_time']}")
+				else:
+					print("Track does not exist.")
+			case "del_track":
+				match asyncio.run(config_api("del_track", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+				}))["status"]:
+					case {"status": "OK"}:
+						print("Track deleted.")
+					case {"status": "ERR"}:
+						print("Error deleting track.")
 			case _:
 				print("Unknown command.")

@@ -181,7 +181,6 @@ async def get_site_account_all(memba_id: int, site_id: str):
 			(site_account_table.c.site_id == site_id)
 		))
 
-
 async def del_site_account(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
@@ -204,7 +203,7 @@ async def set_site_data(memba_id: int, site_id: str, user_id: str, data: dict):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
 		row = await get_site_data(memba_id, site_id, user_id)
-		if len(row) == 0:
+		if row is None:
 			await conn.execute(site_data_table.insert().values(
 				memba_id=memba_id,
 				user_id=user_id,
@@ -212,16 +211,13 @@ async def set_site_data(memba_id: int, site_id: str, user_id: str, data: dict):
 				json=json.dumps(data)
 			))
 			return
-	
-		# Change the JSON
-		row["json"] = json.dumps(data)
 
 		# Update the row
 		await conn.execute(site_data_table.update().where(
 			(site_data_table.c.memba_id == memba_id) &
 			(site_data_table.c.user_id == user_id) &
 			(site_data_table.c.site_id == site_id)
-		).values(row))
+		).values(json=json.dumps(data)))
 
 async def del_site_data(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
@@ -236,13 +232,11 @@ async def set_schedule(memba_id: int, site_id: str, user_id: str, schedule_id: s
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
 		row = await get_site_data(memba_id, site_id, user_id)
-		if len(row) == 0:
-			return
-		
-		row["schedule_id"] = schedule_id
+		if row is None:
+			raise ValueError("Site data does not exist.")
 
 		await conn.execute(site_data_table.update().where(
 			(site_data_table.c.memba_id == memba_id) &
 			(site_data_table.c.user_id == user_id) &
 			(site_data_table.c.site_id == site_id)
-		).values(row))
+		).values(schedule_id=schedule_id))

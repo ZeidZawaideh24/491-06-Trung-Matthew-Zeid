@@ -1,5 +1,6 @@
 import asyncio
 import pathlib
+import datetime
 
 # https://apscheduler.readthedocs.io/en/master/
 import apscheduler # https://github.com/agronholm/apscheduler/issues/465
@@ -24,7 +25,7 @@ for evt_class in vars(apscheduler):
 	) and evt_class not in ["Event", "DataStoreEvent"]:
 		TRACK_EVT.append(getattr(apscheduler, evt_class))
 
-async def handle(event: apscheduler.Event):
+async def schedule_handle(event: apscheduler.Event):
 	await memba_plugin.trigger(
 		memba_misc.camel_to_snake(event.__class__.__name__), False,
 		raw=event
@@ -39,7 +40,7 @@ async def track():
 	try:
 		async with apscheduler.AsyncScheduler(data_store=TRACK_DB) as scheduler:
 			TRACK_SCHEDULE = scheduler
-			TRACK_EVT_INST = TRACK_SCHEDULE.subscribe(handle, TRACK_EVT)
+			TRACK_EVT_INST = TRACK_SCHEDULE.subscribe(schedule_handle, TRACK_EVT)
 			# job_list = await TRACK_SCHEDULE.get_jobs()
 
 			# [TODO] Keep track of which plugins is still exist
@@ -94,6 +95,19 @@ async def close():
 	)
 	TRACK_EVT_INST.unsubscribe()
 	await asyncio.gather(TRACK_SCHEDULE.stop(), TRACK_SCHEDULE.wait_until_stopped())
+
+	# Temporary manual cleanup
+	# https://github.com/agronholm/apscheduler/issues/903
+	job_list = await TRACK_SCHEDULE.get_jobs()
+	for job in job_list:
+		await TRACK_SCHEDULE.data_store.release_job(
+			TRACK_SCHEDULE.identity, job.id,
+			apscheduler._structures.JobResult(
+				job_id=job.id,
+				outcome=apscheduler._structures.JobOutcome.cancelled,
+				expires_at=datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+			)
+		)
 
 ###################### API ######################
 
@@ -159,50 +173,50 @@ async def build_trigger(data):
 	match data["kind"]:
 		case "interval":
 			curr = apscheduler.triggers.interval.IntervalTrigger(
-				weeks=data["weeks"],
-				days=data["days"],
-				hours=data["hours"],
-				minutes=data["minutes"],
-				seconds=data["seconds"],
-				microseconds=data["microseconds"],
-				start_time=data["start_time"],
-				end_time=data["end_time"],
+				weeks=data.get("weeks", 0),
+				days=data.get("days", 0),
+				hours=data.get("hours", 0),
+				minutes=data.get("minutes", 0),
+				seconds=data.get("seconds", 0),
+				microseconds=data.get("microseconds", 0),
+				start_time=data.get("start_time", datetime.datetime.now()),
+				end_time=data.get("end_time", None),
 			)
 		case "calendar":
 			curr = apscheduler.triggers.calendarinterval.CalendarIntervalTrigger(
-				years=data["years"],
-				months=data["months"],
-				weeks=data["weeks"],
-				days=data["days"],
-				hour=data["hour"],
-				minute=data["minute"],
-				second=data["second"],
-				start_time=data["start_time"],
-				end_time=data["end_time"],
+				years=data.get("years", 0),
+				months=data.get("months", 0),
+				weeks=data.get("weeks", 0),
+				days=data.get("days", 0),
+				hour=data.get("hour", 0),
+				minute=data.get("minute", 0),
+				second=data.get("second", 0),
+				start_time=data.get("start_time", datetime.datetime.now()),
+				end_time=data.get("end_time", None),
 			)
 		case "cron":
 			curr = apscheduler.triggers.cron.CronTrigger(
-				year=data["year"],
-				month=data["month"],
-				day=data["day"],
-				week=data["week"],
-				day_of_week=data["day_of_week"],
-				hour=data["hour"],
-				minute=data["minute"],
-				second=data["second"],
-				start_time=data["start_time"],
-				end_time=data["end_time"],
-				timezone=data["timezone"],
+				year=data.get("year", None),
+				month=data.get("month", None),
+				day=data.get("day", None),
+				week=data.get("week", None),
+				day_of_week=data.get("day_of_week", None),
+				hour=data.get("hour", None),
+				minute=data.get("minute", None),
+				second=data.get("second", None),
+				start_time=data.get("start_time", datetime.datetime.now()),
+				end_time=data.get("end_time", None),
+				timezone=data.get("timezone", None),
 			)
 		case "and":
 			curr = apscheduler.triggers.combining.AndTrigger(
-				asyncio.gather(
+				await asyncio.gather(
 					*[build_trigger(x) for x in data["data"]],
 				)
 			)
 		case "or":
 			curr = apscheduler.triggers.combining.OrTrigger(
-				asyncio.gather(
+				await asyncio.gather(
 					*[build_trigger(x) for x in data["data"]],
 				)
 			)
@@ -210,8 +224,8 @@ async def build_trigger(data):
 			pass
 	return curr
 
-async def handle_trigger(*args, **kwargs):
-	await memba_plugin.trigger("handle", kwargs.get("__memba_id__", False), *args, **kwargs)
+async def track_handle(*args, **kwargs):
+	await memba_plugin.trigger("handle", kwargs.get("__site_id__", False), *args, **kwargs)
 
 async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
 	global TRACK_SCHEDULE
@@ -219,23 +233,26 @@ async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
 	row = await memba_data.get_site_data(memba_id, site_id, user_id)
 	if row is not None and row["schedule_id"] is not None:
 		return None
-
+	
 	return str(await TRACK_SCHEDULE.add_schedule(
-		handle_trigger,
+		track_handle,
 		await build_trigger(data),
+		max_running_jobs = 1,
+		conflict_policy = apscheduler.ConflictPolicy.replace,
 		kwargs={
 			"__memba_id__": memba_id,
 			"__site_id__": site_id,
 			"__user_id__": user_id,
+			"__flag__": getattr(memba_plugin.PLUGIN_DB, site_id).__memba_plugin__.flag
 		}
 	))
 
 async def get_track(memba_id: int, site_id: str, user_id: str):
 	global TRACK_SCHEDULE
 	job_uuid = await memba_data.get_site_data(memba_id, site_id, user_id)
-	if job_uuid is None:
+	if job_uuid["schedule_id"] is None:
 		return None
-	return await TRACK_SCHEDULE.data_store.get_schedules([job_uuid])
+	return await TRACK_SCHEDULE.data_store.get_schedules([job_uuid["schedule_id"]])
 
 async def del_track(memba_id: int, site_id: str, user_id: str):
 	global TRACK_SCHEDULE

@@ -42,6 +42,9 @@ class Server:
 		self.route.post("/api/v1/set_site_data")(self.set_site_data)
 		self.route.get("/api/v1/get_site_data")(self.get_site_data)
 		self.route.post("/api/v1/del_site_data")(self.del_site_data)
+		self.route.post("/api/v1/set_track")(self.set_track)
+		self.route.get("/api/v1/get_track")(self.get_track)
+		self.route.post("/api/v1/del_track")(self.del_track)
 		self.route.get("/api/v1/raindrop_account")(self.raindrop_account)
 
 	async def process_queue(self, condition):
@@ -113,21 +116,35 @@ class Server:
 	
 	@classmethod
 	async def set_site_account_handler(cls, data: dict):
-		await memba_data.set_site_account(data["memba_id"], data["site_id"], data["data"])
-		return aiohttp.web.json_response({
-			"status": "OK",
-			"msg": data["msg"]
-		})
+		try:
+			await memba_data.set_site_account(data["memba_id"], data["site_id"], data["data"])
+			return aiohttp.web.json_response({
+				"status": "OK",
+				"msg": data["msg"]
+			})
+		except:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+				"msg": "Error setting account."
+			})
 	
 	@classmethod
 	async def set_site_account_fall(cls, data: dict):
-		await memba_data.set_site_account(data["memba_id"], data["site_id"], data["data"])
-		return aiohttp.web.json_response({
-			"status": "OK",
-			"data": {
-				"msg": "Account set."
-			}
-		})
+		try:
+			await memba_data.set_site_account(data["memba_id"], data["site_id"], data["data"])
+			return aiohttp.web.json_response({
+				"status": "OK",
+				"data": {
+					"msg": "Account set."
+				}
+			})
+		except:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+				"data": {
+					"msg": "Error setting account."
+				}
+			})
 
 	async def set_site_account(self, request: aiohttp.web.Request):
 		data = await request.json()
@@ -216,10 +233,20 @@ class Server:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		await memba_data.set_site_data(data["memba_id"], data["site_id"], data["user_id"], data["data"])
-		return aiohttp.web.json_response({
-			"status": "OK",
-		})
+		try:
+			await memba_data.set_site_data(data["memba_id"], data["site_id"], data["user_id"], json.loads(data["data"]))
+			return aiohttp.web.json_response({
+				"status": "OK",
+			})
+		except Exception as e:
+			memba_misc.log(
+				"SERVER",
+				msg="Error setting site data ({}).".format(e),
+				level=logging.ERROR
+			)
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
 	
 	async def get_site_data(self, request: aiohttp.web.Request):
 		data = await request.json()
@@ -227,11 +254,16 @@ class Server:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		res = await memba_data.get_site_data(data["memba_id"], data["site_id"], data["user_id"])
-		if res is None:
+		all_res = await memba_data.get_site_data(
+			data["memba_id"], data["site_id"], data["user_id"]
+		)
+		if all_res is None:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
+		res = {
+			k: str(v) for k, v in dict(all_res).items()
+		}
 		return aiohttp.web.json_response({
 			"status": "OK",
 			"data": res,
@@ -254,16 +286,26 @@ class Server:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		res = await memba_track.set_track(data["memba_id"], data["site_id"], data["user_id"], data["data"])
-		if res is None:
+		try:
+			res = await memba_track.set_track(data["memba_id"], data["site_id"], data["user_id"], json.loads(data["data"]))
+			if res is None:
+				return aiohttp.web.json_response({
+					"status": "ERR",
+				})
+			await memba_data.set_schedule(data["memba_id"], data["site_id"], data["user_id"], res)
+			return aiohttp.web.json_response({
+				"status": "OK",
+				"data": res,
+			})
+		except Exception as e:
+			memba_misc.log(
+				"SERVER",
+				msg="Error setting track ({}).".format(e),
+				level=logging.ERROR
+			)
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		memba_data.set_schedule(data["memba_id"], data["site_id"], data["user_id"], res)
-		return aiohttp.web.json_response({
-			"status": "OK",
-			"data": res,
-		})
 	
 	async def get_track(self, request: aiohttp.web.Request):
 		data = await request.json()
@@ -271,15 +313,26 @@ class Server:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		res = await memba_track.get_track(data["memba_id"], data["site_id"], data["user_id"])
-		if res is None:
+		try:
+			res = [
+				{
+					"schedule_id": str(_.id),
+					"next_fire_time": str(_.next_fire_time),
+					"last_fire_time": str(_.last_fire_time),
+				} for _ in await memba_track.get_track(data["memba_id"], data["site_id"], data["user_id"])
+			]
+			if len(res) == 0:
+				return aiohttp.web.json_response({
+					"status": "ERR",
+				})
+			return aiohttp.web.json_response({
+				"status": "OK",
+				"data": res,
+			})
+		except:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		return aiohttp.web.json_response({
-			"status": "OK",
-			"data": res,
-		})
 	
 	async def del_track(self, request: aiohttp.web.Request):
 		data = await request.json()
