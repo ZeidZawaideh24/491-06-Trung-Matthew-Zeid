@@ -13,3 +13,118 @@ CONFIG.add_argument("--port", type=int, default=30303)
 CONFIG.add_argument("extra", nargs=argparse.REMAINDER)
 
 CONFIG = CONFIG.parse_args()
+
+async def config_api(path, data, kind="post"):
+	# import aiohttp
+	async with __import__("aiohttp").ClientSession() as session:
+	# async with aiohttp.ClientSession() as session:
+		async with getattr(session, kind)(f"http://{CONFIG.host}:{CONFIG.port}/api/v1/{path}", json=data) as resp:
+		# async with session.post(f"http://{CONFIG.host}:{CONFIG.port}/api/v1/{path}", json=data) as resp:
+			return await resp.json()
+
+def config_event():
+	global CONFIG
+
+	if len(CONFIG.extra) > 0:
+		import asyncio
+		match CONFIG.extra[0]:
+			case "set_account":
+				match asyncio.run(config_api("set_account", {
+					"email": CONFIG.extra[1],
+					"password": CONFIG.extra[2],
+				})):
+					case {"status": "OK"}:
+						print("Account set.")
+					case {"status": "ERR"}:
+						print("Error setting account.")
+			case "get_account":
+				res = asyncio.run(config_api("get_account", {
+					"email": CONFIG.extra[1],
+					"password": CONFIG.extra[2],
+				}, "get"))
+				if res["status"] == "OK":
+					print("Account exists. ID:", res["data"]["id"])
+				else:
+					print("Account does not exist.")
+			case "del_account":
+				match asyncio.run(config_api("del_account", {
+					"email": CONFIG.extra[1],
+					"password": CONFIG.extra[2],
+				})):
+					case {"status": "OK"}:
+						print("Account deleted.")
+					case {"status": "ERR"}:
+						print("Error deleting account.")
+			case "set_site_account":
+				res = asyncio.run(config_api("set_site_account", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+				}))
+				if res["status"] == "OK":
+					print(res["msg"])
+				else:
+					print("Error setting site account.")
+			case "get_site_account":
+				res = asyncio.run(config_api("get_site_account", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+				}, "get"))
+				if res["status"] == "OK":
+					print(f"Date: {res['data']['updated']}")
+				else:
+					print("Site account does not exist.")
+			case "get_site_account_all":
+				res = asyncio.run(config_api("get_site_account_all", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+				}, "get"))
+				if res["status"] == "OK":
+					print(f"Site accounts for {CONFIG.extra[2]}:")
+					for acc in res["data"]:
+						print(f"ID: {acc['user_id']}, Date: {acc['updated']}")
+				else:
+					print("Site account does not exist.")
+			case "del_site_account":
+				match asyncio.run(config_api("del_site_account", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+				})):
+					case {"status": "OK"}:
+						print("Site account deleted.")
+					case {"status": "ERR"}:
+						print("Error deleting site account.")
+			case "set_site_data":
+				match asyncio.run(config_api("set_site_data", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+					"data": CONFIG.extra[4],
+				})):
+					case {"status": "OK"}:
+						print("Site data set.")
+					case {"status": "ERR"}:
+						print("Error setting site data.")
+			case "get_site_data":
+				res = asyncio.run(config_api("get_site_data", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+				}, "get"))
+				if res["status"] == "OK":
+					print(res["data"])
+				else:
+					print("Site data does not exist.")
+			case "del_site_data":
+				match asyncio.run(config_api("del_site_data", {
+					"memba_id": CONFIG.extra[1],
+					"site_id": CONFIG.extra[2],
+					"user_id": CONFIG.extra[3],
+				}))["status"]:
+					case {"status": "OK"}:
+						print("Site data deleted.")
+					case {"status": "ERR"}:
+						print("Error deleting site data.")
+			case _:
+				print("Unknown command.")

@@ -1,40 +1,53 @@
 import memba.backend.plugin.base.core as memba_plugin_core
 import apscheduler.triggers.interval
 
+import memba.backend.base.data as memba_data
+
+import aiohttp
+import lxml.html
+import json
+
 async def start():
-	print("Starting demo plugin.")
+	print("HN Starting demo plugin.")
 
 async def handle(*args, **kwargs):
-	print("Handling job.", args, kwargs)
+	print("HN Handling job.", args, kwargs)
 
 async def load(schedule: apscheduler.AsyncScheduler):
-	print("Loading demo plugin.")
+	print("HN Loading demo plugin.")
 
 async def job_acquired(raw):
-	print("Job acquired.", raw)
-	# try:
-	# 	# print(globals()['sys'].modules)
-	# 	print(__builtins__.keys())
-	# 	# pass
-	# except Exception as e:
-	# 	print("Error: ", e)
-	# try:
-	# 	await schedule.add_schedule(
-	# 		memba_plugin_core.v1_handle,
-	# 		# lambda *args, **kwargs: handle(*args, **kwargs),
-	# 		apscheduler.triggers.interval.IntervalTrigger(
-	# 			seconds=5,
-	# 		),
-	# 		kwargs={
-	# 			"test": "test",
-	# 			"__memba_name__": "demo"
-	# 		},
-	# 	)
-	# except Exception as e:
-	# 	print(e)
-	# 	# Stack trace of the exception
-	# 	import traceback
-	# 	traceback.print_exc()
+	print("HN Job acquired.", raw)
+
+async def download(*args, **kwargs):
+	print("HN Download job.", args, kwargs)
+
+	# Get current account data
+	res = await memba_data.get_site_data(kwargs["__memba_id__"], "hackernews", kwargs["__user_id__"])
+	json_data = json.loads(res["json"])
+
+	i = 1
+	async with aiohttp.ClientSession() as session:
+		link_list = []
+		while True:
+			async with session.get(f"https://news.ycombinator.com/favorites?id={json_data['username']}&p={i}") as resp:
+				if resp.status != 200:
+					return
+				html_inst = lxml.html.fromstring(await resp.text())
+				link_tag = html_inst.cssselect("td.title > span > a")
+
+				link_list_temp = []
+				for link in link_tag:
+					link_list_temp.append(link.get("href"))
+
+				# HN expect chunk of 30 links per page so when we either encounter
+					# page with less than 30 links or no more links, we stop
+				link_list.extend(link_list_temp)
+				if len(link_list_temp) < 30 or any(link in json_data["history"] for link in link_list_temp):
+					json_data["history"].extend(link_list_temp)
+					await memba_data.set_site_data(kwargs["__memba_id__"], "hackernews", kwargs["__user_id__"], json.dumps(json_data))
+					break
+				i += 1
 
 MEMBA_PLUGIN_V1 = {
 	"name": __name__,
@@ -45,5 +58,6 @@ MEMBA_PLUGIN_V1 = {
 		"load": load,
 		"handle": handle,
 		"job_acquired": job_acquired,
+		"download": download,
 	},
 }

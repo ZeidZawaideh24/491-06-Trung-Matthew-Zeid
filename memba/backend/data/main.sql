@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS "site_account" (
 	"updated" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"json" TEXT NOT NULL,
 	PRIMARY KEY ("user_id", "site_id"),
-	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id")
+	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id") ON DELETE CASCADE
 );
 
 -- CREATE TABLE IF NOT EXISTS "site_track" (
@@ -44,9 +44,8 @@ CREATE TABLE IF NOT EXISTS "site_data" (
 	"created" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"updated" DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"json" TEXT NOT NULL, -- Used to track what link downloaded/uploaded so far
-	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id"),
-	FOREIGN KEY ("user_id") REFERENCES "site_account"("user_id"), -- uuid
-	FOREIGN KEY ("site_id") REFERENCES "site_account"("site_id") -- uuid
+	FOREIGN KEY ("memba_id") REFERENCES "memba_account"("id") ON DELETE CASCADE,
+	FOREIGN KEY ("user_id", "site_id") REFERENCES "site_account"("user_id", "site_id") ON DELETE CASCADE -- uuid
 );
 
 -- CREATE TABLE IF NOT EXISTS "memba_schedule" (

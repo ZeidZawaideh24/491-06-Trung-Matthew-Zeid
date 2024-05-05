@@ -40,6 +40,12 @@ python .\memba\main.py
 # &"C:\Program Files (Sole)\ComfyUI\python_embeded\python.exe" .\memba\main.py --server
 
 
+		
+		# site_track = await conn.execute(site_track_table.select().where(site_track_table.c.memba_id == account["id"])).fetchall()
+		# for track in site_track:
+		# 	memba_track.del_track(account["id"], track["site_id"])
+		# 	await del_site_track(account["id"], track["site_id"])
+
 # Spawn asyncio task to run memba_track
 
 # Print all column of memba_account table using sqlite syntax
@@ -122,3 +128,29 @@ python .\memba\main.py
 
 # await memba_data.del_site_data(memba_id, site_id, user_id)
 # Update schedule_id to None
+
+
+
+	# try:
+	# 	# print(globals()['sys'].modules)
+	# 	print(__builtins__.keys())
+	# 	# pass
+	# except Exception as e:
+	# 	print("Error: ", e)
+	# try:
+	# 	await schedule.add_schedule(
+	# 		memba_plugin_core.v1_handle,
+	# 		# lambda *args, **kwargs: handle(*args, **kwargs),
+	# 		apscheduler.triggers.interval.IntervalTrigger(
+	# 			seconds=5,
+	# 		),
+	# 		kwargs={
+	# 			"test": "test",
+	# 			"__memba_name__": "demo"
+	# 		},
+	# 	)
+	# except Exception as e:
+	# 	print(e)
+	# 	# Stack trace of the exception
+	# 	import traceback
+	# 	traceback.print_exc()

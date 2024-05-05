@@ -19,18 +19,25 @@ class SERVE_FLAG(enum.Enum):
 	EXPORT = 2
 	BOTH = 3
 
-async def trigger(evt, flag: bool | str = False, *args, **kwargs):
+async def dummy(*args, **kwargs):
+	pass
+
+async def trigger(evt, flag: bool | str = False, fall = dummy, *args, **kwargs):
 	global PLUGIN_DB
 	global PLUGIN_NS
 	curr_iter = [flag] if isinstance(flag, str) else vars(PLUGIN_DB) if isinstance(flag, bool) else []
+	res = None
+	flag = True
 	if flag:
 		# Should be str or bool
+		res = []
 		for curr_plugin in curr_iter:
 			if hasattr(PLUGIN_DB, curr_plugin) and isinstance(getattr(PLUGIN_DB, curr_plugin), PLUGIN_NS["V1"]):
 				if evt in getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt:
-					await getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs)
+					flag = False
+					res.append(await getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs))
 	else:
-		await asyncio.gather(
+		res = await asyncio.gather(
 			*map(
 				lambda curr_plugin: getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt[evt](*args, **kwargs),
 				(curr_plugin
@@ -39,6 +46,13 @@ async def trigger(evt, flag: bool | str = False, *args, **kwargs):
 						evt in getattr(PLUGIN_DB, curr_plugin).__memba_plugin__.evt)
 			)
 		)
+		if len(res) > 0:
+			flag = False
+	if flag:
+		res = await fall(*args, **kwargs)
+		if res is None:
+			res = []
+	return res
 
 async def start():
 	memba_misc.log(

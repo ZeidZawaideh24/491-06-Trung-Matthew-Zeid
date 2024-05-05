@@ -210,6 +210,9 @@ async def build_trigger(data):
 			pass
 	return curr
 
+async def handle_trigger(*args, **kwargs):
+	await memba_plugin.trigger("handle", kwargs.get("__memba_id__", False), *args, **kwargs)
+
 async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
 	global TRACK_SCHEDULE
 
@@ -217,8 +220,8 @@ async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
 	if row is not None and row["schedule_id"] is not None:
 		return None
 
-	return str(TRACK_SCHEDULE.add_job(
-		memba_plugin.v1_handle,
+	return str(await TRACK_SCHEDULE.add_schedule(
+		handle_trigger,
 		await build_trigger(data),
 		kwargs={
 			"__memba_id__": memba_id,
@@ -232,7 +235,7 @@ async def get_track(memba_id: int, site_id: str, user_id: str):
 	job_uuid = await memba_data.get_site_data(memba_id, site_id, user_id)
 	if job_uuid is None:
 		return None
-	return await TRACK_SCHEDULE.data_store.get_jobs([job_uuid])
+	return await TRACK_SCHEDULE.data_store.get_schedules([job_uuid])
 
 async def del_track(memba_id: int, site_id: str, user_id: str):
 	global TRACK_SCHEDULE
@@ -240,7 +243,7 @@ async def del_track(memba_id: int, site_id: str, user_id: str):
 	if job_uuid is None:
 		return None
 	await memba_data.set_schedule(memba_id, site_id, user_id, None)
-	return await TRACK_SCHEDULE.remove_job(job_uuid)
+	return await TRACK_SCHEDULE.remove_schedule(job_uuid)
 
 async def get_all_site_id(account):
 	return await memba_data.get_all_site_id(account)

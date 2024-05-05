@@ -4,11 +4,15 @@ import asyncio
 import uuid
 import logging
 import functools
+import json
+
+import aiohttp.web_response
 
 import memba.backend.base.misc as memba_misc
 import memba.backend.base as memba_base
 import memba.backend.base.track as memba_track
 import memba.backend.base.data as memba_data
+import memba.backend.plugin.base as memba_plugin
 
 class State:
 	socket: aiohttp.web.WebSocketResponse | None = None
@@ -28,16 +32,36 @@ class Server:
 		self.queue = asyncio.Queue()
 
 		self.route.get("/dev/ws")(self.socket_handle)
-		self.route.get("/api/v1/set_account")(self.set_account)
-		self.route.post("/api/v1/get_account")(self.get_account)
+		self.route.post("/api/v1/set_account")(self.set_account)
+		self.route.get("/api/v1/get_account")(self.get_account)
 		self.route.post("/api/v1/del_account")(self.del_account)
 		self.route.post("/api/v1/set_site_account")(self.set_site_account)
-		self.route.post("/api/v1/get_site_account")(self.get_site_account)
+		self.route.get("/api/v1/get_site_account")(self.get_site_account)
+		self.route.get("/api/v1/get_site_account_all")(self.get_site_account_all)
 		self.route.post("/api/v1/del_site_account")(self.del_site_account)
 		self.route.post("/api/v1/set_site_data")(self.set_site_data)
-		self.route.post("/api/v1/get_site_data")(self.get_site_data)
+		self.route.get("/api/v1/get_site_data")(self.get_site_data)
 		self.route.post("/api/v1/del_site_data")(self.del_site_data)
-		# self.route.post("/api/v1/set_schedule")(self.set_schedule)
+		self.route.get("/api/v1/raindrop_account")(self.raindrop_account)
+
+	async def process_queue(self, condition):
+		temporary_storage = []
+		target_item = None
+
+		while True: #not self.queue.empty():
+			item = await self.queue.get()
+			if condition(item):  # Condition is a function to determine if the item is the one needed
+				target_item = item
+				break
+			else:
+				temporary_storage.append(item)
+
+		# Restore items back to the queue
+		# Reversed to maintain the original order in the queue
+		for item in reversed(temporary_storage):
+			await self.queue.put(item)
+
+		return target_item
 
 	async def start(self):
 		self.app.add_routes(self.route)
@@ -66,19 +90,17 @@ class Server:
 
 	async def change_account(self, func, request: aiohttp.web.Request):
 		data = await request.json()
-		if "email" not in data or "password" not in data:
-			return aiohttp.web.json_response({
-				"status": "ERR",
-			})
-		res = await func(data["email"], data["password"])
-		if res:
-			return aiohttp.web.json_response({
-				"status": "OK",
-			})
-		else:
-			return aiohttp.web.json_response({
-				"status": "ERR",
-			})
+		try:
+			if "email" in data and "password" in data:
+				return aiohttp.web.json_response({
+					"status": "OK",
+					"data": await func(data["email"], data["password"])
+				})
+		except ValueError:
+			pass
+		return aiohttp.web.json_response({
+			"status": "ERR",
+		})
 
 	async def set_account(self, request: aiohttp.web.Request):
 		return await self.change_account(memba_data.set_account, request)
@@ -89,15 +111,53 @@ class Server:
 	async def del_account(self, request: aiohttp.web.Request):
 		return await self.change_account(memba_data.del_account, request)
 	
+	@classmethod
+	async def set_site_account_handler(cls, data: dict):
+		await memba_data.set_site_account(data["memba_id"], data["site_id"], data["data"])
+		return aiohttp.web.json_response({
+			"status": "OK",
+			"msg": data["msg"]
+		})
+	
+	@classmethod
+	async def set_site_account_fall(cls, data: dict):
+		await memba_data.set_site_account(data["memba_id"], data["site_id"], data["data"])
+		return aiohttp.web.json_response({
+			"status": "OK",
+			"data": {
+				"msg": "Account set."
+			}
+		})
+
 	async def set_site_account(self, request: aiohttp.web.Request):
 		data = await request.json()
 		if "memba_id" not in data or "site_id" not in data:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		await memba_data.set_site_account(data["memba_id"], data["site_id"])
+		data["param"] = request.rel_url.query
+		res = await memba_plugin.trigger(
+			"set_site_account", data["site_id"],
+			data=data,
+			server=self,
+			func=Server.set_site_account_handler,
+			fall=Server.set_site_account_fall
+		)
+		
+		err_flag = False
+		data_list = []
+		msg_list = []
+		for r in res:
+			json_response = json.loads(r.body.decode("utf-8"))
+			if json_response.get("status") == "ERR":
+				err_flag = True
+			data_list.append(json_response.get("data", {}))
+			msg_list.append(json_response.get("msg", ""))
+
 		return aiohttp.web.json_response({
-			"status": "OK",
+			"status": "ERR" if err_flag else "OK",
+			"data": data_list,
+			"msg": msg_list,
 		})
 
 	async def get_site_account(self, request: aiohttp.web.Request):
@@ -106,7 +166,11 @@ class Server:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		res = await memba_data.get_site_account(data["memba_id"], data["site_id"], data["user_id"])
+		res = {
+			k: str(v) for k, v in dict(await memba_data.get_site_account(
+				data["memba_id"], data["site_id"], data["user_id"]
+			)).items()
+		}
 		if res is None:
 			return aiohttp.web.json_response({
 				"status": "ERR",
@@ -116,6 +180,25 @@ class Server:
 			"data": res,
 		})
 	
+	async def get_site_account_all(self, request: aiohttp.web.Request):
+		data = await request.json()
+		if "memba_id" not in data or "site_id" not in data:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		res = [
+			{k: str(v) for k, v in dict(x).items()}
+				for x in await memba_data.get_site_account_all(data["memba_id"], data["site_id"])
+		]
+		if res is None:
+			return aiohttp.web.json_response({
+				"status": "ERR",
+			})
+		return aiohttp.web.json_response({
+			"status": "OK",
+			"data": res,
+		})
+
 	async def del_site_account(self, request: aiohttp.web.Request):
 		data = await request.json()
 		if "memba_id" not in data or "site_id" not in data or "user_id" not in data:
@@ -213,6 +296,20 @@ class Server:
 		return aiohttp.web.json_response({
 			"status": "OK",
 		})
+
+	async def raindrop_account(self, request: aiohttp.web.Request):
+		code = request.rel_url.query.get("code", None)
+		if code is None:
+			await self.queue.put({
+				"status": "ERR",
+				"kind": "raindrop_account",
+			})
+		else:
+			await self.queue.put({
+				"status": "OK",
+				"kind": "raindrop_account",
+				"code": code,
+			})
 
 	"""
 	Handles the websocket connection.

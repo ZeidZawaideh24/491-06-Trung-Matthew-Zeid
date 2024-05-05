@@ -120,7 +120,7 @@ async def close():
 async def set_account(email: str, pwd: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		if await conn.execute(memba_account_table.select().where(memba_account_table.c.email == email)).first():
+		if await conn.fetch_one(memba_account_table.select().where(memba_account_table.c.email == email)):
 			raise ValueError("Account already exist.")
 		await conn.execute(memba_account_table.insert().values(
 			pwd=hashlib.sha256(pwd.encode()).hexdigest(),
@@ -130,26 +130,25 @@ async def set_account(email: str, pwd: str):
 async def del_account(email: str, pwd: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		account = await conn.execute(memba_account_table.select().where(memba_account_table.c.email == email)).first()
+		account = await conn.fetch_one(memba_account_table.select().where(memba_account_table.c.email == email))
 		if not account:
 			raise ValueError("Account does not exist.")
 		if account["pwd"] != hashlib.sha256(pwd.encode()).hexdigest():
 			raise ValueError("Incorrect password.")
-		
-		# site_track = await conn.execute(site_track_table.select().where(site_track_table.c.memba_id == account["id"])).fetchall()
-		# for track in site_track:
-		# 	memba_track.del_track(account["id"], track["site_id"])
-		# 	await del_site_track(account["id"], track["site_id"])
+
+		await conn.execute(memba_account_table.delete().where(memba_account_table.c.email == email))
 
 async def get_account(email: str, pwd: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		account = await conn.execute(memba_account_table.select().where(memba_account_table.c.email == email)).first()
+		account = await conn.fetch_one(memba_account_table.select().where(memba_account_table.c.email == email))
 		if not account:
 			raise ValueError("Account does not exist.")
 		if account["pwd"] != hashlib.sha256(pwd.encode()).hexdigest():
 			raise ValueError("Incorrect password.")
-		return account["id"]
+		return {
+			"id": account["id"]
+		}
 
 async def set_site_account(memba_id: int, site_id: str, data: dict):
 	global DATA_DB
@@ -168,25 +167,24 @@ async def set_site_account(memba_id: int, site_id: str, data: dict):
 async def get_site_account(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		return await conn.execute(site_account_table.select().where(
+		return await conn.fetch_one(site_account_table.select().where(
 			(site_account_table.c.memba_id == memba_id) &
 			(site_account_table.c.user_id == user_id) &
 			(site_account_table.c.site_id == site_id)
-		)).first()
-	
+		))
+
 async def get_site_account_all(memba_id: int, site_id: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		return await conn.execute(site_account_table.select().where(
+		return await conn.fetch_all(site_account_table.select().where(
 			(site_account_table.c.memba_id == memba_id) &
 			(site_account_table.c.site_id == site_id)
-		)).fetchall()
-	
+		))
+
+
 async def del_site_account(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		await del_site_data(memba_id, site_id, user_id)
-
 		await conn.execute(site_account_table.delete().where(
 			(site_account_table.c.memba_id == memba_id) &
 			(site_account_table.c.user_id == user_id) &
@@ -196,11 +194,11 @@ async def del_site_account(memba_id: int, site_id: str, user_id: str):
 async def get_site_data(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
-		return await conn.execute(site_data_table.select().where(
+		return await conn.fetch_one(site_data_table.select().where(
 			(site_data_table.c.memba_id == memba_id) &
 			(site_data_table.c.user_id == user_id) &
 			(site_data_table.c.site_id == site_id)
-		)).first()
+		))
 
 async def set_site_data(memba_id: int, site_id: str, user_id: str, data: dict):
 	global DATA_DB

@@ -24,3 +24,5 @@ import memba.backend.base.config as memba_config
 
 if memba_config.CONFIG.server:
 	from memba.frontend import host
+else:
+	memba_config.config_event()
