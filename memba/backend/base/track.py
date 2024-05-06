@@ -238,7 +238,8 @@ async def set_track(memba_id: int, site_id: str, user_id: str, data: dict):
 		track_handle,
 		await build_trigger(data),
 		max_running_jobs = 1,
-		conflict_policy = apscheduler.ConflictPolicy.replace,
+		conflict_policy = apscheduler.ConflictPolicy.do_nothing,
+		id=f"{memba_id}-{site_id}-{user_id}",
 		kwargs={
 			"__memba_id__": memba_id,
 			"__site_id__": site_id,

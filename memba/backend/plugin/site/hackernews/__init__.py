@@ -20,8 +20,8 @@ async def handle(*args, **kwargs):
 	if kwargs["__flag__"] == memba_plugin_core.v1.SERVE_FLAG.IMPORT:
 		res_account = await memba_data.get_site_account(kwargs["__memba_id__"], "hackernews", kwargs["__user_id__"])
 		res_site = await memba_data.get_site_data(kwargs["__memba_id__"], "hackernews", kwargs["__user_id__"])
-		json_account_data = json.loads(res_account["json"])
-		json_site_data = json.loads(res_site["json"])
+		json_account_data = res_account["json"]
+		json_site_data = res_site["json"]
 
 		i = 1
 		async with aiohttp.ClientSession() as session:
@@ -41,21 +41,16 @@ async def handle(*args, **kwargs):
 							if href.startswith("item?id="):
 								href = f"https://news.ycombinator.com/{href}"
 							link_list_temp.append({
-								"link": href,
-								"age": str(datetime.datetime.fromisoformat(age.get("title"))),
+								"url": href,
+								"since": datetime.datetime.fromisoformat(age.get("title")),
 							})
 
 					# HN expect chunk of 30 links per page so when we either encounter
 						# page with less than 30 links or no more links, we stop
 					link_list.extend(link_list_temp)
 					if len(link_list_temp) < 30 or \
-						("history" in json_site_data and any(link["link"] in json_site_data["history"] for link in link_list_temp)):
-						memba_misc.remove_dupe(
-							link_list,
-							lambda seen, item: all(item["link"] != x["link"] for x in seen)
-						)
-						json_site_data["history"] = link_list
-						await memba_data.set_site_data(kwargs["__memba_id__"], "hackernews", kwargs["__user_id__"], json_site_data)
+						await memba_plugin_core.v1_check(link_list_temp, **kwargs):
+						await memba_plugin_core.v1_import(link_list, cap=30, **kwargs)
 						break
 				memba_misc.log(
 					"PLUGIN",
