@@ -11,7 +11,7 @@ import aiohttp
 
 CLIENT_ID = "66383aa7facf5e5f885ceb4f"
 CLIENT_SECRET = "b2e97880-0ac7-4f0f-b5d3-4f08b235bf50"
-COLLECTION_ID = 43802593
+COLLECTION_ID = -1 # 43802593
 
 async def handle(*args, **kwargs):
 	if kwargs["__flag__"] == memba_plugin_core.v1.SERVE_FLAG.EXPORT:
