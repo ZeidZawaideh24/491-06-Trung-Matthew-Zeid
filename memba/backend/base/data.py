@@ -282,7 +282,7 @@ async def set_site_account(memba_id: int, site_id: str, data: dict):
 		))
 
 		return acc_id
-	
+
 async def update_site_account(memba_id: int, site_id: str, user_id: str, data: dict):
 	global DATA_DB
 	async with DATA_DB.connection() as conn:
