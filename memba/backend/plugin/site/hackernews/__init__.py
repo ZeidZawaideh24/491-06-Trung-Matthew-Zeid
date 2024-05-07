@@ -24,41 +24,51 @@ async def handle(*args, **kwargs):
 		json_site_data = res_site["json"]
 
 		i = 1
-		async with aiohttp.ClientSession() as session:
-			link_list = []
-			while True:
-				async with session.get(f"https://news.ycombinator.com/favorites?id={json_account_data['username']}&p={i}") as resp:
-					if resp.status != 200:
-						return
-					html_inst = lxml.html.fromstring(await resp.text())
-					link_tag = html_inst.xpath("//td[@class='title']/span/a")
-					age_tag = html_inst.xpath("//span[@class='age']")
+		try:
+			async with aiohttp.ClientSession() as session:
+				link_list = []
+				while True:
+					async with session.get(f"https://news.ycombinator.com/favorites?id={json_account_data['username']}&p={i}") as resp:
+						if resp.status != 200:
+							return
+						html_inst = lxml.html.fromstring(await resp.text())
+						link_tag = html_inst.xpath("//td[@class='title']/span/a")
+						age_tag = html_inst.xpath("//span[@class='age']")
 
-					link_list_temp = []
-					for link, age in zip(link_tag, age_tag):
-						href = link.get("href")
-						if href:
-							if href.startswith("item?id="):
-								href = f"https://news.ycombinator.com/{href}"
-							link_list_temp.append({
-								"url": href,
-								"since": datetime.datetime.fromisoformat(age.get("title")),
-							})
+						link_list_temp = []
+						for link, age in zip(link_tag, age_tag):
+							href = link.get("href")
+							if href:
+								if href.startswith("item?id="):
+									href = f"https://news.ycombinator.com/{href}"
+								link_list_temp.append({
+									"url": href,
+									"since": datetime.datetime.fromisoformat(age.get("title")),
+								})
 
-					# HN expect chunk of 30 links per page so when we either encounter
-						# page with less than 30 links or no more links, we stop
-					link_list.extend(link_list_temp)
-					if len(link_list_temp) < 30 or \
-						await memba_plugin_core.v1_check(link_list_temp, **kwargs):
-						await memba_plugin_core.v1_import(link_list, cap=30, **kwargs)
-						break
-				memba_misc.log(
-					"PLUGIN",
-					msg=f"HN {json_account_data['username']} page {i} done.",
-					level=memba_misc.logging.INFO
-				)
-				i += 1
-				await asyncio.sleep(json_site_data.get("rate", 5))
+						# HN expect chunk of 30 links per page so when we either encounter
+							# page with less than 30 links or no more links, we stop
+						link_list.extend(link_list_temp)
+						if len(link_list_temp) < 30 or \
+							await memba_plugin_core.v1_check(link_list_temp, **kwargs):
+							await memba_plugin_core.v1_import(link_list, cap=30, **kwargs)
+							break
+					memba_misc.log(
+						"PLUGIN",
+						msg=f"HN {json_account_data['username']} page {i} done.",
+						level=memba_misc.logging.INFO
+					)
+					i += 1
+					await asyncio.sleep(json_site_data.get("rate", 5))
+		except Exception as e:
+			memba_misc.log(
+				"PLUGIN",
+				msg=f"HN {json_account_data['username']} failed. {e}",
+				level=memba_misc.logging.ERROR,
+				**{
+					"name": kwargs["__memba_id__"],
+				}
+			)
 
 async def set_site_account(data, func, server, *args, **kwargs):
 	data["data"] = {
