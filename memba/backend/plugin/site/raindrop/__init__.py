@@ -97,14 +97,16 @@ async def set_site_account(data: dict, func, server, *args, **kwargs):
 		))
 	)
 
-	result_code = await asyncio.wait_for(
-		server.process_queue(lambda _: _.get("kind", "") == "raindrop_account"),
-		timeout=60
-	)
-	if result_code is None:
-		return {
+	result_code = None
+	try:
+		result_code = await asyncio.wait_for(
+			server.process_queue(lambda _: _.get("kind", "") == "raindrop_account"),
+			timeout=60
+		)
+	except asyncio.TimeoutError:
+		return aiohttp.web.json_response({
 			"msg": "Authorization timed out."
-		}
+		})
 
 	async with aiohttp.ClientSession() as session:
 		async with session.post(
