@@ -345,7 +345,6 @@ class Server:
 			return aiohttp.web.json_response({
 				"status": "ERR",
 			})
-		memba_data.set_schedule(data["memba_id"], data["site_id"], data["user_id"], None)
 		return aiohttp.web.json_response({
 			"status": "OK",
 		})

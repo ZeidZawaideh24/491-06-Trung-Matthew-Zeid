@@ -154,7 +154,7 @@ def config_event():
 					"memba_id": CONFIG.extra[1],
 					"site_id": CONFIG.extra[2],
 					"user_id": CONFIG.extra[3],
-				}))["status"]:
+				})):
 					case {"status": "OK"}:
 						print("Track deleted.")
 					case {"status": "ERR"}:
