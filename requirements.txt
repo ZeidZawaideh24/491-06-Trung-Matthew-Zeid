@@ -5,6 +5,8 @@
 # cloudscraper
 databases==0.9.0
 aiosqlite
+aiohttp
+lxml
 sqlalchemy==2.0.28
 APScheduler==4.0.0a4
 webbrowser
