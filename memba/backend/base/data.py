@@ -313,6 +313,7 @@ async def get_site_account_all(memba_id: int, site_id: str):
 
 async def del_site_account(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
+	await memba_track.del_track(memba_id, site_id, user_id)
 	async with DATA_DB.connection() as conn:
 		await conn.execute(site_account_table.delete().where(
 			(site_account_table.c.memba_id == memba_id) &
@@ -353,6 +354,7 @@ async def set_site_data(memba_id: int, site_id: str, user_id: str, data: dict):
 
 async def del_site_data(memba_id: int, site_id: str, user_id: str):
 	global DATA_DB
+	await memba_track.del_track(memba_id, site_id, user_id)
 	async with DATA_DB.connection() as conn:
 		await conn.execute(site_data_table.delete().where(
 			(site_data_table.c.memba_id == memba_id) &
