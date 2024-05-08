@@ -260,7 +260,6 @@ async def del_track(memba_id: int, site_id: str, user_id: str):
 	job_uuid = await memba_data.get_site_data(memba_id, site_id, user_id)
 	if job_uuid is None:
 		return None
-	print(job_uuid["schedule_id"])
 	await memba_data.set_schedule(memba_id, site_id, user_id, None)
 	await TRACK_SCHEDULE.remove_schedule(job_uuid["schedule_id"])
 	return True
